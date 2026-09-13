@@ -1,20 +1,18 @@
-import type { Role } from "../../../generated/prisma/browser";
+import type { Role } from "../../../generated/prisma/enums";
 
 export interface ILoginUserPayload {
   email: string;
   password: string;
 }
 
-export interface IRegisterPatientPayload {
+export interface IRegisterCitizenPayload {
   name: string;
   email: string;
   password: string;
-  patient: {
-    contactNumber?: string;
-  };
+  phoneNumber?: string;
 }
 
-export interface IverifyEmailPayload {
+export interface IVerifyEmailPayload {
   email: string;
   otp: string;
 }

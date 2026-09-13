@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/style/useConst: <explanation> */
 import { error } from "node:console";
 import bcrypt from "bcryptjs";
 import type { TokenPayload } from "google-auth-library";
@@ -17,24 +16,18 @@ import type {
   IForgotPasswordPayload,
   IGooglePayload,
   ILoginUserPayload,
-  IRegisterPatientPayload,
+  IRegisterCitizenPayload,
   IRequestUser,
   IResetPasswordPayload,
-  IverifyEmailPayload,
+  IVerifyEmailPayload,
 } from "./auth.interface";
 import crypto from "crypto";
 import { redisCLient } from "../../lib/redis";
 import { transporter } from "../../lib/notemailter";
 import ejs from "ejs";
-import {
-  createPasswordChangedEmailHtml,
-  createResetPasswordEmailHtml,
-  resetPasswordEmailHtml,
-} from "../../utils/emailTemplate";
-import { RedisClient } from "redis";
 
-const registerPatient = async (payload: IRegisterPatientPayload) => {
-  const { name, password, patient: patientData } = payload;
+const registerCitizen = async (payload: IRegisterCitizenPayload) => {
+  const { name, password, phoneNumber } = payload;
   const email = payload.email.trim().toLowerCase();
 
   const isUserExists = await prisma.user.findUnique({
@@ -48,7 +41,7 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
   const hashedPassword = await bcrypt.hash(password, 8);
 
   const expirationSeconds = 5 * 60;
-  const otpkey = `patient-registration-otp:${email}`;
+  const otpkey = `citizen-registration-otp:${email}`;
   const otpValue = crypto.randomInt(100000, 1000000).toString();
 
   await redisCLient.set(otpkey, otpValue, {
@@ -58,16 +51,16 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
     },
   });
 
-  const patientRegistrationKey = `patient-registration-data:${email}`;
+  const citizenRegistrationKey = `citizen-registration-data:${email}`;
   const redisUserDataPayload = {
     name,
     email,
     password: hashedPassword,
-    patient: patientData,
+    phoneNumber,
   };
 
   await redisCLient.set(
-    patientRegistrationKey,
+    citizenRegistrationKey,
     JSON.stringify(redisUserDataPayload),
     {
       expiration: {
@@ -88,14 +81,14 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
   });
 
   await transporter.sendMail({
-    from: config.email_sender,
+    from: `"City Services" <${config.email_sender}>`,
     to: email,
     subject: "Email Verification",
     html,
   });
 };
 
-const verifyPatientEmail = async (payload: IverifyEmailPayload) => {
+const verifyCitizenEmail = async (payload: IVerifyEmailPayload) => {
   const otp = payload.otp;
   const email = payload.email.trim().toLowerCase();
 
@@ -107,14 +100,14 @@ const verifyPatientEmail = async (payload: IverifyEmailPayload) => {
     throw new Error("Email Already Verified");
   }
 
-  if (isUserExist?.status === "BLOCKED") {
-    throw new Error("User is block");
+  if (isUserExist?.status === UserStatus.BLOCKED) {
+    throw new Error("User is blocked");
   }
-  if (isUserExist?.isDeleted || isUserExist?.status === "DELETED") {
+  if (isUserExist?.isDeleted) {
     throw new Error("User is deleted");
   }
 
-  const otpkey = `patient-registration-otp:${email}`;
+  const otpkey = `citizen-registration-otp:${email}`;
   const radisOtp = await redisCLient.get(otpkey);
 
   if (!radisOtp) {
@@ -126,58 +119,56 @@ const verifyPatientEmail = async (payload: IverifyEmailPayload) => {
 
   await redisCLient.del(otpkey);
 
-  const patientRegistrationKey = `patient-registration-data:${email}`;
-  const redisPatientData = await redisCLient.get(patientRegistrationKey);
+  const citizenRegistrationKey = `citizen-registration-data:${email}`;
+  const redisCitizenData = await redisCLient.get(citizenRegistrationKey);
 
-  if (!redisPatientData) {
-    throw new Error("Patient registration data not found");
+  if (!redisCitizenData) {
+    throw new Error("Registration data not found");
   }
 
-  const patientPayload: IRegisterPatientPayload = JSON.parse(redisPatientData);
+  const citizenPayload: IRegisterCitizenPayload = JSON.parse(redisCitizenData);
 
   const createdUser = await prisma.user.create({
     data: {
-      name: patientPayload.name,
-      email: patientPayload.email,
-      password: patientPayload.password,
-      role: Role.PATIENT,
+      name: citizenPayload.name,
+      email: citizenPayload.email,
+      password: citizenPayload.password,
+      phoneNumber: citizenPayload.phoneNumber || null,
+      role: Role.CITIZEN,
       status: UserStatus.ACTIVE,
       emailVerified: true,
-      patient: {
-        create: {
-          name: patientPayload.name,
-          email: patientPayload.email,
-          contactNumber: patientPayload?.patient?.contactNumber || "",
-        },
-      },
     },
     omit: { password: true },
-    include: { patient: true },
   });
 
-  await redisCLient.del(patientRegistrationKey);
+  await redisCLient.del(citizenRegistrationKey);
 
   const templatePath = path.join(
     process.cwd(),
-    "src/app/templates/patient-welcome-email.ejs",
+    "src/app/templates/citizen-welcome-email.ejs",
   );
-  const html = await ejs.renderFile(templatePath, {
-    name: createdUser.name,
-  });
+  
+  let html = "";
+  try {
+    html = await ejs.renderFile(templatePath, {
+      name: createdUser.name,
+    });
+  } catch {
+    html = `<h1>Welcome to City Services Platform, ${createdUser.name}!</h1>`;
+  }
 
   await transporter.sendMail({
-    from: config.email_sender,
+    from: `"City Services" <${config.email_sender}>`,
     to: email,
-    subject: "Welcome To PH Health Care",
+    subject: "Welcome To City Services Platform",
     html,
   });
 
-  const { patient, ...user } = createdUser;
   const jwtPayload = {
-    userId: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
+    userId: createdUser.id,
+    name: createdUser.name,
+    email: createdUser.email,
+    role: createdUser.role,
   };
 
   const accessToken = jwtUtils.createToken(
@@ -193,8 +184,7 @@ const verifyPatientEmail = async (payload: IverifyEmailPayload) => {
   );
 
   return {
-    user,
-    patient,
+    user: createdUser,
     accessToken,
     refreshToken,
   };
@@ -216,7 +206,7 @@ const loginUser = async (payload: ILoginUserPayload) => {
     throw new Error("User is blocked");
   }
 
-  if (user.isDeleted || user.status === UserStatus.DELETED) {
+  if (user.isDeleted) {
     throw new Error("User is deleted");
   }
 
@@ -262,9 +252,6 @@ const getMe = async (user: IRequestUser) => {
   const isUserExists = await prisma.user.findUnique({
     where: {
       id: user.userId,
-    },
-    include: {
-      patient: true,
     },
     omit: {
       password: true,
@@ -344,50 +331,45 @@ const googleLoginService = async (payload: IGooglePayload) => {
     throw new Error("Invalid or Expired Google Id Token ");
   }
   if (!googleIdTokenPayload.email) {
-    throw new Error("Google emeil not found");
+    throw new Error("Google email not found");
   }
 
   if (!googleIdTokenPayload.name) {
-    throw new Error("Google emeil user name  not found");
+    throw new Error("Google email user name not found");
   }
 
-  const ifPatientExistWithGoogleAuth = await prisma.user.findUnique({
+  const ifUserExistWithGoogleAuth = await prisma.user.findUnique({
     where: {
       email: googleIdTokenPayload.email,
-      role: Role.PATIENT,
       googleId: googleIdTokenPayload.sub,
     },
   });
 
-  let user = ifPatientExistWithGoogleAuth;
+  let user = ifUserExistWithGoogleAuth;
 
-  if (!ifPatientExistWithGoogleAuth) {
-    const ifPatientExistWithCredentials = await prisma.user.findUnique({
+  if (!ifUserExistWithGoogleAuth) {
+    const ifUserExistWithCredentials = await prisma.user.findUnique({
       where: {
         email: googleIdTokenPayload.email,
-        role: Role.PATIENT,
         authProvider: AuthProvider.CREDENTIAL,
       },
     });
 
-    if (ifPatientExistWithCredentials) {
-      if (!ifPatientExistWithCredentials.emailVerified) {
+    if (ifUserExistWithCredentials) {
+      if (!ifUserExistWithCredentials.emailVerified) {
         throw new Error("Email not verified");
       }
 
-      if (ifPatientExistWithCredentials.status === UserStatus.BLOCKED) {
+      if (ifUserExistWithCredentials.status === UserStatus.BLOCKED) {
         throw new Error("User is blocked");
       }
-      if (
-        ifPatientExistWithCredentials.isDeleted ||
-        ifPatientExistWithCredentials.status === UserStatus.DELETED
-      ) {
+      if (ifUserExistWithCredentials.isDeleted) {
         throw new Error("User is Deleted");
       }
 
       user = await prisma.user.update({
         where: {
-          id: ifPatientExistWithCredentials.id,
+          id: ifUserExistWithCredentials.id,
         },
         data: {
           googleId: googleIdTokenPayload.sub,
@@ -399,32 +381,32 @@ const googleLoginService = async (payload: IGooglePayload) => {
         data: {
           name: googleIdTokenPayload.name,
           email: googleIdTokenPayload.email,
-          role: Role.PATIENT,
+          role: Role.CITIZEN,
           googleId: googleIdTokenPayload.sub,
           authProvider: AuthProvider.GOOGLE,
           emailVerified: true,
-          patient: {
-            create: {
-              name: googleIdTokenPayload.name,
-              email: googleIdTokenPayload.email,
-            },
-          },
         },
       });
-        const templatePath = path.join(
-    process.cwd(),
-    "src/app/templates/patient-welcome-email.ejs",
-  );
-  const html = await ejs.renderFile(templatePath, {
-    name: user.name,
-  });
 
-  await transporter.sendMail({
-    from: config.email_sender,
-    to: user.email,
-    subject: "Welcome To PH Health Care",
-    html,
-  });
+      const templatePath = path.join(
+        process.cwd(),
+        "src/app/templates/citizen-welcome-email.ejs",
+      );
+      let html = "";
+      try {
+        html = await ejs.renderFile(templatePath, {
+          name: user.name,
+        });
+      } catch {
+        html = `<h1>Welcome to City Services Platform, ${user.name}!</h1>`;
+      }
+
+      await transporter.sendMail({
+        from: `"City Services" <${config.email_sender}>`,
+        to: user.email,
+        subject: "Welcome To City Services Platform",
+        html,
+      });
     }
   }
 
@@ -435,7 +417,7 @@ const googleLoginService = async (payload: IGooglePayload) => {
   if (user.status === UserStatus.BLOCKED) {
     throw new Error("User is blocked");
   }
-  if (user.isDeleted || user.status === UserStatus.DELETED) {
+  if (user.isDeleted) {
     throw new Error("User is Deleted");
   }
 
@@ -477,16 +459,16 @@ const forgotPassword = async (payload: IForgotPasswordPayload) => {
     throw new Error("User Does Not Exist");
   }
   if (!isUserExist.emailVerified) {
-    throw new Error("User user not varified");
+    throw new Error("User email not verified");
   }
 
-  if (isUserExist.status === "BLOCKED") {
-    throw new Error("User is block");
+  if (isUserExist.status === UserStatus.BLOCKED) {
+    throw new Error("User is blocked");
   }
-  if (isUserExist.isDeleted || isUserExist.status === "DELETED") {
+  if (isUserExist.isDeleted) {
     throw new Error("User is deleted");
   }
-  if (isUserExist.googleId && isUserExist.authProvider === "GOOGLE") {
+  if (isUserExist.googleId && isUserExist.authProvider === AuthProvider.GOOGLE) {
     throw new Error("User has account with google");
   }
 
@@ -511,7 +493,7 @@ const forgotPassword = async (payload: IForgotPasswordPayload) => {
   });
 
   await transporter.sendMail({
-    from: config.email_sender,
+    from: `"City Services" <${config.email_sender}>`,
     to: isUserExist.email,
     subject: "Forgot Password",
     html,
@@ -531,16 +513,16 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
     throw new Error("User Does Not Exist");
   }
   if (!isUserExist.emailVerified) {
-    throw new Error("User user not varified");
+    throw new Error("User email not verified");
   }
 
-  if (isUserExist.status === "BLOCKED") {
-    throw new Error("User is block");
+  if (isUserExist.status === UserStatus.BLOCKED) {
+    throw new Error("User is blocked");
   }
-  if (isUserExist.isDeleted || isUserExist.status === "DELETED") {
+  if (isUserExist.isDeleted) {
     throw new Error("User is deleted");
   }
-  if (isUserExist.googleId && isUserExist.authProvider === "GOOGLE") {
+  if (isUserExist.googleId && isUserExist.authProvider === AuthProvider.GOOGLE) {
     throw new Error("User has account with google");
   }
   const key = `forgot-password-otp:${isUserExist.email}`;
@@ -555,7 +537,7 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
 
   const hashedNewPassword = await bcrypt.hash(
     newPassword,
-    Number(config.bcrypt_salt_rounds),
+    Number(config.bcrypt_salt_rounds) || 12,
   );
 
   await prisma.user.update({
@@ -578,7 +560,7 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
   });
 
   await transporter.sendMail({
-    from: `"PH HealthCare" <${config.email_sender}>`,
+    from: `"City Services" <${config.email_sender}>`,
     to: isUserExist.email,
     subject: "Security Notification: Password Changed",
     html,
@@ -586,8 +568,8 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
 };
 
 export const AuthService = {
-  registerPatient,
-  verifyPatientEmail,
+  registerCitizen,
+  verifyCitizenEmail,
   loginUser,
   getMe,
   refreshToken,
@@ -595,4 +577,3 @@ export const AuthService = {
   forgotPassword,
   resetPassword,
 };
-

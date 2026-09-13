@@ -11,8 +11,8 @@ export default {
   frontend_url: process.env.FRONTEND_URL,
   google_client_id: process.env.GOOGLE_CLIENT_ID,
   bcrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS,
-  jwt_access_secret: process.env.JWT_ACCESS_SECRET!
-  jwt_refresh_secret: process.env.JWT_REFRESH_SECRET!
+  jwt_access_secret: process.env.JWT_ACCESS_SECRET!,
+  jwt_refresh_secret: process.env.JWT_REFRESH_SECRET!,
   jwt_access_expires_in: process.env.JWT_ACCESS_EXPIRES_IN || "1d",
   jwt_refresh_expires_in: process.env.JWT_REFRESH_EXPIRES_IN || "6d",
   super_admin_name: process.env.SUPER_ADMIN_NAME,

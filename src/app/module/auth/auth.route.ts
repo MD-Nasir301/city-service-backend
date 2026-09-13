@@ -9,35 +9,41 @@ const router = Router();
 
 router.post(
   "/register",
-  validateRequest(userValidation.PatientRegistrationZodSchema),
-  AuthController.registerPatient,
+  validateRequest(userValidation.CitizenRegistrationZodSchema),
+  AuthController.registerCitizen,
 );
 
 router.post(
   "/verify-email",
-  validateRequest(userValidation.PatientEmailVeifyZodSchema),
-  AuthController.verifyPatientEmail,
+  validateRequest(userValidation.CitizenEmailVerifyZodSchema),
+  AuthController.verifyCitizenEmail,
 );
+
 router.post(
   "/login",
   validateRequest(userValidation.LoginZodSchema),
   AuthController.loginUser,
 );
+
 router.get(
   "/me",
-  auth(Role.ADMIN, Role.DOCTOR, Role.PATIENT, Role.SUPER_ADMIN),
+  auth(Role.ADMIN, Role.CITIZEN, Role.STAFF, Role.SUPER_ADMIN),
   AuthController.getMe,
 );
+
 router.post("/google", AuthController.googleLogin);
 router.post("/refresh-token", AuthController.refreshToken);
+
 router.post(
   "/forgot-password",
   validateRequest(userValidation.ForgotPasswordZodSchema),
   AuthController.forgotPassword,
 );
+
 router.post(
   "/reset-password",
   validateRequest(userValidation.ResetPasswordZodSchema),
   AuthController.resetPassword,
 );
+
 export const AuthRoutes = router;

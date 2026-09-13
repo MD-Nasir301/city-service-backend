@@ -1,6 +1,6 @@
 import z from "zod";
 
-const PatientRegistrationZodSchema = z.object({
+const CitizenRegistrationZodSchema = z.object({
   name: z.string(),
   email: z.string(),
   password: z
@@ -17,21 +17,16 @@ const PatientRegistrationZodSchema = z.object({
     .regex(/[^a-zA-Z0-9]/, {
       message: "Password must contain at least one special character.",
     }),
-  patient: z
-    .object({
-      contactNumber: z.string().optional(),
-    })
-    .optional(),
+  phoneNumber: z.string().optional(),
 });
-const PatientEmailVeifyZodSchema = z.object({
-  email: z.string(),
-  otp : z.string().length(6)
-  
 
+const CitizenEmailVerifyZodSchema = z.object({
+  email: z.string(),
+  otp: z.string().length(6),
 });
 
 const LoginZodSchema = z.object({
-  email: z.email(),
+  email: z.string().email(),
   password: z
     .string()
     .min(8, { message: "Password must be at least 8 characters long." })
@@ -49,11 +44,11 @@ const LoginZodSchema = z.object({
 });
 
 const ForgotPasswordZodSchema = z.object({
-  email: z.email(),
+  email: z.string().email(),
 });
 
 const ResetPasswordZodSchema = z.object({
-  email: z.email(),
+  email: z.string().email(),
   newPassword: z
     .string()
     .min(8, { message: "Password must be at least 8 characters long." })
@@ -72,8 +67,8 @@ const ResetPasswordZodSchema = z.object({
 });
 
 export const userValidation = {
-  PatientRegistrationZodSchema,
-  PatientEmailVeifyZodSchema,
+  CitizenRegistrationZodSchema,
+  CitizenEmailVerifyZodSchema,
   LoginZodSchema,
   ForgotPasswordZodSchema,
   ResetPasswordZodSchema,

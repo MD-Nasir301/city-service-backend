@@ -5,25 +5,10 @@ import { sendResponse } from "../../utils/sendResponse";
 import type { IRequestUser } from "./auth.interface";
 import { AuthService } from "./auth.service";
 
-const registerPatient = catchAsync(async (req: Request, res: Response) => {
+const registerCitizen = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
 
-  await AuthService.registerPatient(payload);
-
-  // const { accessToken, refreshToken, user, patient } = result;
-
-  // res.cookie("accessToken", accessToken, {
-  //   httpOnly: true,
-  //   secure: false,
-  //   sameSite: "none",
-  //   maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
-  // });
-  // res.cookie("refreshToken", refreshToken, {
-  //   httpOnly: true,
-  //   secure: false,
-  //   sameSite: "none",
-  //   maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-  // });
+  await AuthService.registerCitizen(payload);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -32,18 +17,19 @@ const registerPatient = catchAsync(async (req: Request, res: Response) => {
     data: null,
   });
 });
-const verifyPatientEmail = catchAsync(async (req: Request, res: Response) => {
+
+const verifyCitizenEmail = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
 
-  const result = await AuthService.verifyPatientEmail(payload);
+  const result = await AuthService.verifyCitizenEmail(payload);
 
-  const { accessToken, refreshToken, user, patient } = result;
+  const { accessToken, refreshToken, user } = result;
 
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: false,
     sameSite: "none",
-    maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
+    maxAge: 1000 * 60 * 60 * 24, // 1 day
   });
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
@@ -60,7 +46,6 @@ const verifyPatientEmail = catchAsync(async (req: Request, res: Response) => {
       accessToken,
       refreshToken,
       user,
-      patient,
     },
   });
 });
@@ -74,13 +59,13 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
     httpOnly: true,
     secure: false,
     sameSite: "none",
-    maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
+    maxAge: 1000 * 60 * 60 * 24,
   });
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: false,
     sameSite: "none",
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    maxAge: 1000 * 60 * 60 * 24 * 7,
   });
 
   sendResponse(res, {
@@ -121,13 +106,13 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
     httpOnly: true,
     secure: false,
     sameSite: "none",
-    maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
+    maxAge: 1000 * 60 * 60 * 24,
   });
   res.cookie("refreshToken", newRefreshToken, {
     httpOnly: true,
     secure: false,
     sameSite: "none",
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    maxAge: 1000 * 60 * 60 * 24 * 7,
   });
 
   sendResponse(res, {
@@ -150,13 +135,13 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
     httpOnly: true,
     secure: false,
     sameSite: "none",
-    maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
+    maxAge: 1000 * 60 * 60 * 24,
   });
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: false,
     sameSite: "none",
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    maxAge: 1000 * 60 * 60 * 24 * 7,
   });
 
   sendResponse(res, {
@@ -195,8 +180,8 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const AuthController = {
-  registerPatient,
-  verifyPatientEmail,
+  registerCitizen,
+  verifyCitizenEmail,
   loginUser,
   getMe,
   refreshToken,
