@@ -97,3 +97,6 @@ export const seedTesterAdmin = async () => {
     console.log("Error Seeding Tester Admin : ", error);
   }
 };
+
+
+

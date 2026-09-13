@@ -16,3 +16,8 @@ enum AuthProvider {
   CREDENTIAL 
   GOOGLE 
 }
+
+enum CategoryType {
+  FREE
+  PAID
+}
