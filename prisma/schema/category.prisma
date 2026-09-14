@@ -1,17 +1,16 @@
-
 model Category {
   id          String       @id @default(uuid())
   name        String       @unique
   description String?
   type        CategoryType @default(FREE)
-  unitName    String?      
+  unitName    String?
   basePrice   Float        @default(0.0)
   isActive    Boolean      @default(true)
   isDeleted   Boolean      @default(false)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  // complaints Complaint[]
+  complaints ServiceRequest[]
 
   @@map("categories")
 }

@@ -11,13 +11,38 @@ enum UserStatus {
   DELETED
 }
 
-
 enum AuthProvider {
-  CREDENTIAL 
-  GOOGLE 
+  CREDENTIAL
+  GOOGLE
 }
 
 enum CategoryType {
   FREE
   PAID
 }
+
+enum RequestStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  CANCELLED
+  REJECTED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+} 
+
+
+

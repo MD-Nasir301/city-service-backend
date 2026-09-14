@@ -4,6 +4,7 @@ import { transporter } from "./app/lib/notemailter";
 import { prisma } from "./app/lib/prisma";
 import { redisCLient } from "./app/lib/redis";
 import {
+  seedCategories,
   seedSuperAdmin,
   seedTesterAdmin,
 } from "./app/utils/seed";
@@ -23,6 +24,7 @@ const main = async () => {
 
     await seedSuperAdmin();
     await seedTesterAdmin();
+    await seedCategories()
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });

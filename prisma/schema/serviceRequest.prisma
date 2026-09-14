@@ -1,0 +1,27 @@
+model ServiceRequest {
+  id              String        @id @default(uuid())
+  title           String
+  description     String        @db.Text
+  address         String
+  latitude        Float?
+  longitude       Float?
+  images          String[]
+  quantity        Int           @default(1)
+  totalAmount     Float         @default(0.0)
+  isPaid          Boolean       @default(false)
+  status          RequestStatus @default(PENDING)
+  priority        Priority      @default(MEDIUM)
+  citizenId       String
+  categoryId      String
+  assignedStaffId String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  citizen       User     @relation("CitizenRequests", fields: [citizenId], references: [id], onDelete: Cascade)
+  category      Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  assignedStaff User?    @relation("AssignedStaffRequests", fields: [assignedStaffId], references: [id], onDelete: SetNull)
+
+  @@map("service_requests")
+}
+
+

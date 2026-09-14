@@ -16,10 +16,9 @@ model User {
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
-  
-  // complaintsSubmitted Complaint[] @relation("CitizenComplaints")
-  // complaintsAssigned  Complaint[] @relation("StaffComplaints")
-  // payments            Payment[]
+  complaintsSubmitted ServiceRequest[] @relation("CitizenRequests")
+  complaintsAssigned  ServiceRequest[] @relation("AssignedStaffRequests")
+   //payments            Payment[]
   // comments            Comment[]
   // auditLogs           AuditLog[]
 

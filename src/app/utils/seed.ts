@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { Role } from "../../generated/prisma/enums";
+import { Role, CategoryType } from "../../generated/prisma/enums"; // আপনার Prisma Enum Import এর সঠিক পাথ
 import config from "../config";
 import { prisma } from "../lib/prisma";
 
@@ -51,8 +51,7 @@ export const seedSuperAdmin = async () => {
   }
 };
 
-//create tester admin
-
+// Create tester admin
 export const seedTesterAdmin = async () => {
   try {
     const isTesterAdminExist = await prisma.user.findUnique({
@@ -99,4 +98,80 @@ export const seedTesterAdmin = async () => {
 };
 
 
+export const seedCategories = async () => {
+  try {
+    const categories = [
+      // FREE SERVICES
+      {
+        name: "Waste Management",
+        description: "Report uncollected garbage, overflowed dustbins, or illegal dumping.",
+        type: CategoryType.FREE,
+        basePrice: 0,
+        unitName: null,
+      },
+      {
+        name: "Street Lighting",
+        description: "Report broken, damaged, or unfunctional street lights.",
+        type: CategoryType.FREE,
+        basePrice: 0,
+        unitName: null,
+      },
+      {
+        name: "Road Repair & Footpaths",
+        description: "Report potholes, broken pavements, or hazardous road damage.",
+        type: CategoryType.FREE,
+        basePrice: 0,
+        unitName: null,
+      },
+      {
+        name: "Drainage & Sewerage",
+        description: "Report blocked drains, waterlogging, or overflowing manholes.",
+        type: CategoryType.FREE,
+        basePrice: 0,
+        unitName: null,
+      },
+      {
+        name: "Public Park & Tree Trimming",
+        description: "Report hazardous tree branches on public roads or park maintenance needs.",
+        type: CategoryType.FREE,
+        basePrice: 0,
+        unitName: null,
+      },
 
+      // PAID SERVICES
+      {
+        name: "Private Waste Removal",
+        description: "Hire dedicated city staff for bulk construction waste or private debris removal.",
+        type: CategoryType.PAID,
+        basePrice: 1200.0,
+        unitName: "Per Truck",
+      },
+      {
+        name: "Private Drain Unblocking",
+        description: "Request specialized staff and equipment for private property drainage cleanout.",
+        type: CategoryType.PAID,
+        basePrice: 800.0,
+        unitName: "Per Service",
+      },
+      {
+        name: "Private Tree Pruning",
+        description: "Hire municipal staff for safe cutting or pruning of private garden trees.",
+        type: CategoryType.PAID,
+        basePrice: 500.0,
+        unitName: "Per Tree",
+      },
+    ];
+
+    for (const category of categories) {
+      await prisma.category.upsert({
+        where: { name: category.name },
+        update: {},
+        create: category,
+      });
+    }
+
+    console.log("Categories seeded successfully!");
+  } catch (error) {
+    console.error("Error Seeding Categories:", error);
+  }
+};
