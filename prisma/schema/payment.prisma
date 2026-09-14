@@ -1,1 +1,16 @@
+model Payment {
+  id               String        @id @default(uuid())
+  amount           Float
+  transactionId    String        @unique
+  status           PaymentStatus @default(PENDING)
+  paymentMethod    String?
+  serviceRequestId String        @unique
+  userId           String
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceRequest ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
