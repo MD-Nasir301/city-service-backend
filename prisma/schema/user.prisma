@@ -19,8 +19,8 @@ model User {
   complaintsSubmitted ServiceRequest[] @relation("CitizenRequests")
   complaintsAssigned  ServiceRequest[] @relation("AssignedStaffRequests")
   payments            Payment[]
-  // comments            Comment[]
-  // auditLogs           AuditLog[]
+  comments            Comment[]
+  auditLogs           AuditLog[]
 
   @@map("user")
 }

@@ -1,0 +1,14 @@
+model Comment {
+  id               String   @id @default(uuid())
+  text             String   @db.Text
+  isInternal       Boolean  @default(false)
+  serviceRequestId String
+  userId           String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  serviceRequest ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}

@@ -17,10 +17,11 @@ model ServiceRequest {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  citizen       User     @relation("CitizenRequests", fields: [citizenId], references: [id], onDelete: Cascade)
-  category      Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  assignedStaff User?    @relation("AssignedStaffRequests", fields: [assignedStaffId], references: [id], onDelete: SetNull)
+  citizen       User      @relation("CitizenRequests", fields: [citizenId], references: [id], onDelete: Cascade)
+  category      Category  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  assignedStaff User?     @relation("AssignedStaffRequests", fields: [assignedStaffId], references: [id], onDelete: SetNull)
   payment       Payment?
+  comments      Comment[]
 
   @@map("service_requests")
 }

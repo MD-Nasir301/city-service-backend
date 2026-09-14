@@ -43,3 +43,11 @@ enum PaymentStatus {
   CANCELLED
   REFUNDED
 }
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  STATUS_CHANGE
+  ASSIGNMENT
+}
