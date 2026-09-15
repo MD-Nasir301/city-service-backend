@@ -404,7 +404,6 @@ const updateServiceRequestStatus = async (
   user: { userId: string; role: Role },
   payload: { status: RequestStatus },
 ) => {
-
   const serviceRequest = await prisma.serviceRequest.findFirst({
     where: { id, isDeleted: false },
   });
@@ -423,7 +422,7 @@ const updateServiceRequestStatus = async (
     );
   }
 
-  // 3. Transaction (Update Status + AuditLog)
+  // Transaction (Update Status + AuditLog)
   const result = await prisma.$transaction(async (tx) => {
     const updatedRequest = await tx.serviceRequest.update({
       where: { id },
@@ -450,6 +449,59 @@ const updateServiceRequestStatus = async (
   return result;
 };
 
+const deleteServiceRequest = async (
+  id: string,
+  user: { userId: string; role: Role },
+) => {
+ 
+  const serviceRequest = await prisma.serviceRequest.findFirst({
+    where: { id, isDeleted: false },
+  });
+
+  if (!serviceRequest) {
+    throw new AppError(404, "Service request not found.");
+  }
+
+  if (user.role === Role.CITIZEN) {
+    if (serviceRequest.citizenId !== user.userId) {
+      throw new AppError(403, "You can only delete your own service request.");
+    }
+
+    if (serviceRequest.status !== RequestStatus.PENDING) {
+      throw new AppError(
+        400,
+        "Cannot delete service request once processing has started.",
+      );
+    }
+  }
+
+  // Transaction (Soft Delete + AuditLog)
+  const result = await prisma.$transaction(async (tx) => {
+    const deletedRequest = await tx.serviceRequest.update({
+      where: { id },
+      data: {
+        isDeleted: true,
+      },
+    });
+
+    await createAuditLog(tx, {
+      action: AuditAction.DELETE,
+      entityName: "ServiceRequest",
+      entityId: deletedRequest.id,
+      performedById: user.userId,
+      details: {
+        actionType: "SOFT_DELETE",
+        title: serviceRequest.title,
+        statusAtDeletion: serviceRequest.status,
+      },
+    });
+
+    return deletedRequest;
+  });
+
+  return result;
+};
+
 export const ServiceRequestService = {
   createServiceRequest,
   getAllServiceRequests,
@@ -458,4 +510,5 @@ export const ServiceRequestService = {
   getSingleServiceRequest,
   assignStaff,
   updateServiceRequestStatus,
+  deleteServiceRequest,
 };
