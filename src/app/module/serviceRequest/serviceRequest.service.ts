@@ -159,11 +159,10 @@ const getAllServiceRequests = async (query: IServiceRequestFilterParams) => {
   };
 };
 
-
 // Get My Requests (Citizen)
 const getMyServiceRequests = async (
   userId: string,
-  filters: IMyServiceRequestFilterParams
+  filters: IMyServiceRequestFilterParams,
 ) => {
   const { search, status, priority, type, page = "1", limit = "10" } = filters;
 
@@ -173,7 +172,7 @@ const getMyServiceRequests = async (
 
   const andConditions: Prisma.ServiceRequestWhereInput[] = [
     { citizenId: userId },
-    // { isDeleted: false }, 
+    // { isDeleted: false },
   ];
 
   if (search) {
@@ -221,7 +220,7 @@ const getMyServiceRequests = async (
       page: pageNum,
       limit: limitNum,
       total,
-      totalPages: Math.ceil(total / limitNum), 
+      totalPages: Math.ceil(total / limitNum),
     },
     data: result,
   };

@@ -21,7 +21,7 @@ router.get(
 
 router.get(
   "/my-requests",
-  auth(Role.CITIZEN),
+  auth(Role.CITIZEN, Role.ADMIN, Role.SUPER_ADMIN),
   ServiceRequestController.getMyServiceRequests,
 );
 
