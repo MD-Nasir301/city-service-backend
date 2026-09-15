@@ -3,6 +3,7 @@ import {
   AuditAction,
   CategoryType,
   RequestStatus,
+  Role,
 } from "../../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
@@ -230,7 +231,7 @@ const getMyServiceRequests = async (
 // Get My Assigned Requests (Staff)
 const getMyAssignedRequests = async (
   staffId: string,
-  filters: IMyAssignedFilterParams
+  filters: IMyAssignedFilterParams,
 ) => {
   const { search, status, priority, type, page = "1", limit = "10" } = filters;
 
@@ -306,11 +307,49 @@ const getMyAssignedRequests = async (
   };
 };
 
+// Get Single Service Request Details
+const getSingleServiceRequest = async (
+  id: string,
+  user: { userId: string; role: Role },
+) => {
+  const result = await prisma.serviceRequest.findFirst({
+    where: {
+      id,
+      isDeleted: false,
+    },
+    include: {
+      category: {
+        select: { id: true, name: true, type: true, description: true },
+      },
+      citizen: {
+        select: { id: true, name: true, email: true, phoneNumber: true },
+      },
+      assignedStaff: {
+        select: { id: true, name: true, email: true, phoneNumber: true },
+      },
+      payment: true,
+    },
+  });
 
+  if (!result) {
+    throw new AppError(404, "Service request not found");
+  }
+
+  if (user.role === Role.CITIZEN && result.citizenId !== user.userId) {
+    throw new AppError(403, "You are not authorized to view this request");
+  }
+
+  if (user.role === Role.STAFF && result.assignedStaffId !== user.userId) {
+    throw new AppError(403, "You are not assigned to this request");
+  }
+
+  return result;
+};
 
 export const ServiceRequestService = {
   createServiceRequest,
   getAllServiceRequests,
   getMyServiceRequests,
   getMyAssignedRequests,
+  getSingleServiceRequest,
 };

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { ServiceRequestService } from "./serviceRequest.service";
+import { Role } from "../../../generated/prisma/enums";
 
 const createServiceRequest = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.userId;
@@ -48,28 +49,47 @@ const getMyServiceRequests = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getMyAssignedRequests = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.userId;
+    const result = await ServiceRequestService.getMyAssignedRequests(
+      userId as string,
+      req.query,
+    );
 
-const getMyAssignedRequests = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user?.userId;
-  const result = await ServiceRequestService.getMyAssignedRequests(
-    userId as string,
-    req.query
-  );
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Assigned service requests fetched successfully",
+      meta: result.meta,
+      data: result.data,
+    });
+  },
+);
 
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "Assigned service requests fetched successfully",
-    meta: result.meta,
-    data: result.data,
-  });
-});
+const getSingleServiceRequest = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const user = req.user ;
 
+    const result = await ServiceRequestService.getSingleServiceRequest(
+      id as string,
+      user as { userId: string; role: Role },
+    );
 
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Service request fetched successfully",
+      data: result,
+    });
+  },
+);
 
 export const ServiceRequestController = {
   createServiceRequest,
   getAllServiceRequests,
   getMyServiceRequests,
   getMyAssignedRequests,
+  getSingleServiceRequest,
 };
