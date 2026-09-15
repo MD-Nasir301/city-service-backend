@@ -9,6 +9,7 @@ import AppError from "../../utils/appError";
 import { createAuditLog } from "../../utils/createAuditLog";
 import {
   ICreateServiceRequestInput,
+  IMyAssignedFilterParams,
   IMyServiceRequestFilterParams,
   IServiceRequestFilterParams,
 } from "./serviceRequest.interface";
@@ -79,7 +80,7 @@ const createServiceRequest = async (
   return result;
 };
 
-// 2. Get All Service Requests (Filter, Search & Pagination)
+// Get All Service Requests (Filter, Search & Pagination)
 const getAllServiceRequests = async (query: IServiceRequestFilterParams) => {
   const {
     search,
@@ -159,7 +160,7 @@ const getAllServiceRequests = async (query: IServiceRequestFilterParams) => {
   };
 };
 
-// Get My Requests (Citizen)
+// Get My Requests (Citizen, Admin, Supper Admin)
 const getMyServiceRequests = async (
   userId: string,
   filters: IMyServiceRequestFilterParams,
@@ -226,8 +227,90 @@ const getMyServiceRequests = async (
   };
 };
 
+// Get My Assigned Requests (Staff)
+const getMyAssignedRequests = async (
+  staffId: string,
+  filters: IMyAssignedFilterParams
+) => {
+  const { search, status, priority, type, page = "1", limit = "10" } = filters;
+
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  const andConditions: Prisma.ServiceRequestWhereInput[] = [];
+
+  // Always check assignedStaffId & isDeleted
+  andConditions.push({
+    assignedStaffId: staffId,
+    isDeleted: false,
+  });
+
+  // Search Condition (title, description, address)
+  if (search) {
+    andConditions.push({
+      OR: [
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        { address: { contains: search, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  // Exact Filter Conditions
+  if (status) andConditions.push({ status });
+  if (priority) andConditions.push({ priority });
+
+  // Filter by Category Type (PAID / FREE) via relation
+  if (type) {
+    andConditions.push({
+      category: {
+        type: type,
+      },
+    });
+  }
+
+  const whereConditions: Prisma.ServiceRequestWhereInput = {
+    AND: andConditions,
+  };
+
+  const result = await prisma.serviceRequest.findMany({
+    where: whereConditions,
+    skip,
+    take: limitNum,
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      category: {
+        select: { id: true, name: true, type: true },
+      },
+      citizen: {
+        select: { id: true, name: true, email: true, phoneNumber: true },
+      },
+    },
+  });
+
+  const total = await prisma.serviceRequest.count({
+    where: whereConditions,
+  });
+
+  return {
+    meta: {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      totalPages: Math.ceil(total / limitNum),
+    },
+    data: result,
+  };
+};
+
+
+
 export const ServiceRequestService = {
   createServiceRequest,
   getAllServiceRequests,
   getMyServiceRequests,
+  getMyAssignedRequests,
 };

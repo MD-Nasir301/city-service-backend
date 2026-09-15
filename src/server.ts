@@ -7,6 +7,7 @@ import {
   seedCategories,
   seedSuperAdmin,
   seedTesterAdmin,
+  seedTesterStaff,
 } from "./app/utils/seed";
 
 const PORT = config.port;
@@ -19,12 +20,13 @@ const main = async () => {
     await redisCLient.connect();
     console.log("Redis Connected Successfully");
 
-    await transporter.verify()
-    console.log("Notemailer conected successfully")
+    await transporter.verify();
+    console.log("Notemailer conected successfully");
 
     await seedSuperAdmin();
     await seedTesterAdmin();
-    await seedCategories()
+    await seedTesterStaff();
+    await seedCategories();
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });

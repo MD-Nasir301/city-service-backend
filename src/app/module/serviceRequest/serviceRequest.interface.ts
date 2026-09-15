@@ -32,3 +32,12 @@ export interface IMyServiceRequestFilterParams {
   page?: string;
   limit?: string;
 }
+
+export interface IMyAssignedFilterParams {
+  search?: string;
+  status?: RequestStatus;
+  priority?: Priority;
+  type?: CategoryType;
+  page?: string;
+  limit?: string;
+}

@@ -97,6 +97,52 @@ export const seedTesterAdmin = async () => {
   }
 };
 
+// Create tester staff
+export const seedTesterStaff = async () => {
+  try {
+    const isTesterStaffExist = await prisma.user.findUnique({
+      where: {
+        email: config.tester_staff_email,
+      },
+    });
+
+    if (isTesterStaffExist) {
+      console.log("Tester Staff Already Exists!");
+      return;
+    }
+
+    const name = config.tester_staff_name;
+    const email = config.tester_staff_email;
+    const password = config.tester_staff_password;
+
+    if (!name || !email || !password) {
+      throw new Error(
+        "Tester Staff Name, Email, Password Missing In Env File!!!"
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(
+      password,
+      Number(config.bcrypt_salt_rounds)
+    );
+
+    const testerStaff = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: Role.STAFF,
+        needPasswordChange: false,
+        emailVerified: true,
+      },
+    });
+
+    console.log("Tester Staff Created : ", testerStaff);
+  } catch (error) {
+    console.log("Error Seeding Tester Staff : ", error);
+  }
+};
+
 
 export const seedCategories = async () => {
   try {

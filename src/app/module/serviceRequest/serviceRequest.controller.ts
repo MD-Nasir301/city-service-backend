@@ -48,8 +48,28 @@ const getMyServiceRequests = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+const getMyAssignedRequests = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const result = await ServiceRequestService.getMyAssignedRequests(
+    userId as string,
+    req.query
+  );
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Assigned service requests fetched successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
+
+
 export const ServiceRequestController = {
   createServiceRequest,
   getAllServiceRequests,
   getMyServiceRequests,
+  getMyAssignedRequests,
 };

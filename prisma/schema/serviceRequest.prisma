@@ -9,6 +9,7 @@ model ServiceRequest {
   quantity        Int           @default(1)
   totalAmount     Float         @default(0.0)
   isPaid          Boolean       @default(false)
+  isDeleted       Boolean       @default(false)
   status          RequestStatus @default(PENDING)
   priority        Priority      @default(MEDIUM)
   citizenId       String

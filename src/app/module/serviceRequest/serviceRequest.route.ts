@@ -25,4 +25,10 @@ router.get(
   ServiceRequestController.getMyServiceRequests,
 );
 
+router.get(
+  "/my-assigned",
+  auth(Role.STAFF),
+  ServiceRequestController.getMyAssignedRequests
+);
+
 export const ServiceRequestRoutes = router;
