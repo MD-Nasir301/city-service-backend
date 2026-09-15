@@ -70,7 +70,7 @@ const getMyAssignedRequests = catchAsync(
 const getSingleServiceRequest = catchAsync(
   async (req: Request, res: Response) => {
     const { id } = req.params;
-    const user = req.user ;
+    const user = req.user;
 
     const result = await ServiceRequestService.getSingleServiceRequest(
       id as string,
@@ -86,10 +86,28 @@ const getSingleServiceRequest = catchAsync(
   },
 );
 
+const assignStaff = catchAsync(async (req: Request, res: Response) => {
+  const { serviceRequestId } = req.params;
+  const adminId = req.user?.userId;
+  const result = await ServiceRequestService.assignStaff(
+    serviceRequestId as string,
+    adminId as string,
+    req.body,
+  );
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Staff assigned successfully",
+    data: result,
+  });
+});
+
 export const ServiceRequestController = {
   createServiceRequest,
   getAllServiceRequests,
   getMyServiceRequests,
   getMyAssignedRequests,
   getSingleServiceRequest,
+  assignStaff,
 };

@@ -346,10 +346,65 @@ const getSingleServiceRequest = async (
   return result;
 };
 
+const assignStaff = async (
+  serviceRequestId: string,
+  adminId: string,
+  payload: { assignedStaffId: string },
+) => {
+  const serviceRequest = await prisma.serviceRequest.findFirst({
+    where: { id: serviceRequestId, isDeleted: false },
+  });
+
+  if (!serviceRequest) {
+    throw new AppError(404, "Service request not found.");
+  }
+
+  const staff = await prisma.user.findFirst({
+    where: { id: payload.assignedStaffId, role: Role.STAFF, isDeleted: false },
+  });
+
+  if (!staff) {
+    throw new AppError(404, "Target user not found or is not a staff.");
+  }
+
+ 
+  //Database Transaction (Update + AuditLog)
+  const result = await prisma.$transaction(async (tx) => {
+    const updatedRequest = await tx.serviceRequest.update({
+      where: { id : serviceRequestId },
+      data: {
+        assignedStaffId: payload.assignedStaffId,
+        status: RequestStatus.IN_PROGRESS,
+      },
+    });
+
+    if (adminId) {
+      await createAuditLog(tx, {
+        action: AuditAction.UPDATE,
+        entityName: "ServiceRequest",
+        entityId: updatedRequest.id,
+        performedById: adminId,
+        details: {
+          actionType: "ASSIGN_STAFF",
+          assignedStaffId: payload.assignedStaffId,
+          assignedStaffName: staff.name,
+          previousStatus: serviceRequest.status,
+          newStatus: RequestStatus.IN_PROGRESS,
+        },
+      });
+    }
+
+    return updatedRequest;
+  });
+
+  return result;
+};
+
 export const ServiceRequestService = {
   createServiceRequest,
   getAllServiceRequests,
   getMyServiceRequests,
   getMyAssignedRequests,
   getSingleServiceRequest,
+  assignStaff,
 };

@@ -1,5 +1,3 @@
-
-
 import z from "zod";
 import { Priority } from "../../../generated/prisma/enums";
 
@@ -23,10 +21,22 @@ const CreateServiceRequestZodSchema = z.object({
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   images: z.array(z.string()).optional(),
-  priority: z.enum([Priority.LOW, Priority.MEDIUM, Priority.HIGH, Priority.URGENT]).optional(),
-  quantity: z.number().min(1, { message: "Quantity must be at least 1." }).optional(),
+  priority: z
+    .enum([Priority.LOW, Priority.MEDIUM, Priority.HIGH, Priority.URGENT])
+    .optional(),
+  quantity: z
+    .number()
+    .min(1, { message: "Quantity must be at least 1." })
+    .optional(),
+});
+
+const AssignStaffZodSchema = z.object({
+  assignedStaffId: z.string({
+    message: "Assigned Staff ID is required.",
+  }),
 });
 
 export const ServiceRequestValidation = {
   CreateServiceRequestZodSchema,
+  AssignStaffZodSchema,
 };

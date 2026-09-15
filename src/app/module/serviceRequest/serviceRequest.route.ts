@@ -37,4 +37,11 @@ router.get(
   ServiceRequestController.getSingleServiceRequest,
 );
 
+router.patch(
+  "/:serviceRequestId/assign",
+  auth(Role.ADMIN, Role.SUPER_ADMIN),
+  validateRequest(ServiceRequestValidation.AssignStaffZodSchema),
+  ServiceRequestController.assignStaff
+);
+
 export const ServiceRequestRoutes = router;
