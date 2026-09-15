@@ -23,3 +23,12 @@ export interface IServiceRequestFilterParams {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
+
+export interface IMyServiceRequestFilterParams {
+  search?: string;
+  status?: RequestStatus;
+  priority?: Priority;
+  type?: CategoryType; 
+  page?: string;
+  limit?: string;
+}

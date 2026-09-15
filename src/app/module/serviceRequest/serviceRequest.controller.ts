@@ -1,4 +1,3 @@
-
 import { Request, Response } from "express";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
@@ -6,7 +5,10 @@ import { ServiceRequestService } from "./serviceRequest.service";
 
 const createServiceRequest = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.userId;
-  const result = await ServiceRequestService.createServiceRequest(userId as string, req.body);
+  const result = await ServiceRequestService.createServiceRequest(
+    userId as string,
+    req.body,
+  );
 
   sendResponse(res, {
     statusCode: 201,
@@ -16,13 +18,31 @@ const createServiceRequest = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getAllServiceRequests = catchAsync(async (req: Request, res: Response) => {
-  const result = await ServiceRequestService.getAllServiceRequests(req.query);
+const getAllServiceRequests = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await ServiceRequestService.getAllServiceRequests(req.query);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Service requests fetched successfully",
+      meta: result.meta,
+      data: result.data,
+    });
+  },
+);
+
+const getMyServiceRequests = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const result = await ServiceRequestService.getMyServiceRequests(
+    userId as string,
+    req.query,
+  );
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
-    message: "Service requests fetched successfully",
+    message: "My service requests fetched successfully",
     meta: result.meta,
     data: result.data,
   });
@@ -31,4 +51,5 @@ const getAllServiceRequests = catchAsync(async (req: Request, res: Response) => 
 export const ServiceRequestController = {
   createServiceRequest,
   getAllServiceRequests,
+  getMyServiceRequests,
 };

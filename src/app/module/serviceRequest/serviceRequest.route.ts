@@ -1,5 +1,3 @@
-
-
 import express from "express";
 import { Role } from "../../../generated/prisma/enums";
 import { auth } from "../../middleware/checkAuth";
@@ -13,13 +11,18 @@ router.post(
   "/",
   auth(Role.CITIZEN, Role.ADMIN, Role.SUPER_ADMIN),
   validateRequest(ServiceRequestValidation.CreateServiceRequestZodSchema),
-  ServiceRequestController.createServiceRequest
+  ServiceRequestController.createServiceRequest,
 );
 router.get(
   "/",
   auth(Role.ADMIN, Role.SUPER_ADMIN, Role.STAFF),
-  ServiceRequestController.getAllServiceRequests
+  ServiceRequestController.getAllServiceRequests,
 );
 
+router.get(
+  "/my-requests",
+  auth(Role.CITIZEN),
+  ServiceRequestController.getMyServiceRequests,
+);
 
 export const ServiceRequestRoutes = router;

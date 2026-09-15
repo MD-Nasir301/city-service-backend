@@ -9,6 +9,7 @@ import AppError from "../../utils/appError";
 import { createAuditLog } from "../../utils/createAuditLog";
 import {
   ICreateServiceRequestInput,
+  IMyServiceRequestFilterParams,
   IServiceRequestFilterParams,
 } from "./serviceRequest.interface";
 
@@ -158,7 +159,76 @@ const getAllServiceRequests = async (query: IServiceRequestFilterParams) => {
   };
 };
 
+
+// Get My Requests (Citizen)
+const getMyServiceRequests = async (
+  userId: string,
+  filters: IMyServiceRequestFilterParams
+) => {
+  const { search, status, priority, type, page = "1", limit = "10" } = filters;
+
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  const andConditions: Prisma.ServiceRequestWhereInput[] = [
+    { citizenId: userId },
+    // { isDeleted: false }, 
+  ];
+
+  if (search) {
+    andConditions.push({
+      OR: [
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  if (status) andConditions.push({ status });
+  if (priority) andConditions.push({ priority });
+  if (type) {
+    andConditions.push({
+      category: {
+        type: type,
+      },
+    });
+  }
+
+  const whereConditions: Prisma.ServiceRequestWhereInput =
+    andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const result = await prisma.serviceRequest.findMany({
+    where: whereConditions,
+    skip,
+    take: limitNum,
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      category: {
+        select: { id: true, name: true, type: true },
+      },
+    },
+  });
+
+  const total = await prisma.serviceRequest.count({
+    where: whereConditions,
+  });
+
+  return {
+    meta: {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      totalPages: Math.ceil(total / limitNum), 
+    },
+    data: result,
+  };
+};
+
 export const ServiceRequestService = {
   createServiceRequest,
   getAllServiceRequests,
+  getMyServiceRequests,
 };
