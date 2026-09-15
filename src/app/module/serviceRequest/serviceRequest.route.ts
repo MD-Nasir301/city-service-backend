@@ -15,7 +15,7 @@ router.post(
 );
 router.get(
   "/",
-  auth(Role.ADMIN, Role.SUPER_ADMIN, Role.STAFF),
+  auth(Role.ADMIN, Role.SUPER_ADMIN),
   ServiceRequestController.getAllServiceRequests,
 );
 
@@ -28,13 +28,13 @@ router.get(
 router.get(
   "/my-assigned",
   auth(Role.STAFF),
-  ServiceRequestController.getMyAssignedRequests
+  ServiceRequestController.getMyAssignedRequests,
 );
 
 router.get(
   "/:id",
   auth(Role.CITIZEN, Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN),
-  ServiceRequestController.getSingleServiceRequest
+  ServiceRequestController.getSingleServiceRequest,
 );
 
 export const ServiceRequestRoutes = router;

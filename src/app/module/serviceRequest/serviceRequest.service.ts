@@ -137,10 +137,10 @@ const getAllServiceRequests = async (query: IServiceRequestFilterParams) => {
         select: { id: true, name: true, type: true },
       },
       citizen: {
-        select: { id: true, name: true, email: true, phoneNumber: true },
+        select: { id: true, name: true, email: true },
       },
       assignedStaff: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, name: true },
       },
     },
   });
