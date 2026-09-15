@@ -15,5 +15,11 @@ router.post(
   validateRequest(ServiceRequestValidation.CreateServiceRequestZodSchema),
   ServiceRequestController.createServiceRequest
 );
+router.get(
+  "/",
+  auth(Role.ADMIN, Role.SUPER_ADMIN, Role.STAFF),
+  ServiceRequestController.getAllServiceRequests
+);
+
 
 export const ServiceRequestRoutes = router;

@@ -1,3 +1,4 @@
+import { Prisma } from "../../../generated/prisma/client";
 import {
   AuditAction,
   CategoryType,
@@ -6,7 +7,10 @@ import {
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
 import { createAuditLog } from "../../utils/createAuditLog";
-import { ICreateServiceRequestInput } from "./serviceRequest.interface";
+import {
+  ICreateServiceRequestInput,
+  IServiceRequestFilterParams,
+} from "./serviceRequest.interface";
 
 const createServiceRequest = async (
   userId: string,
@@ -74,6 +78,87 @@ const createServiceRequest = async (
   return result;
 };
 
+// 2. Get All Service Requests (Filter, Search & Pagination)
+const getAllServiceRequests = async (query: IServiceRequestFilterParams) => {
+  const {
+    search,
+    status,
+    priority,
+    type,
+    categoryId,
+    page = "1",
+    limit = "10",
+    sortBy = "createdAt",
+    sortOrder = "desc",
+  } = query;
+
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  const andConditions: Prisma.ServiceRequestWhereInput[] = [];
+
+  if (search) {
+    andConditions.push({
+      OR: [
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        { address: { contains: search, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  if (status) andConditions.push({ status });
+  if (priority) andConditions.push({ priority });
+  if (type) {
+    andConditions.push({
+      category: {
+        type: type,
+      },
+    });
+  }
+  if (categoryId) andConditions.push({ categoryId });
+
+  const whereConditions: Prisma.ServiceRequestWhereInput =
+    andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const result = await prisma.serviceRequest.findMany({
+    where: whereConditions,
+    skip,
+    take: limitNum,
+    orderBy: {
+      [sortBy]: sortOrder,
+    },
+    include: {
+      category: {
+        select: { id: true, name: true, type: true },
+      },
+      citizen: {
+        select: { id: true, name: true, email: true, phoneNumber: true },
+      },
+      assignedStaff: {
+        select: { id: true, name: true, email: true },
+      },
+    },
+  });
+
+  // Total count for metadata
+  const total = await prisma.serviceRequest.count({
+    where: whereConditions,
+  });
+
+  return {
+    meta: {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      totalPages: Math.ceil(total / limitNum),
+    },
+    data: result,
+  };
+};
+
 export const ServiceRequestService = {
   createServiceRequest,
+  getAllServiceRequests,
 };
