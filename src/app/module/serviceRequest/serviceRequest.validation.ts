@@ -1,5 +1,5 @@
 import z from "zod";
-import { Priority } from "../../../generated/prisma/enums";
+import { Priority, RequestStatus } from "../../../generated/prisma/enums";
 
 const CreateServiceRequestZodSchema = z.object({
   categoryId: z.string({
@@ -36,7 +36,23 @@ const AssignStaffZodSchema = z.object({
   }),
 });
 
+const UpdateStatusZodSchema = z.object({
+  status: z.enum(
+    [
+      RequestStatus.PENDING,
+      RequestStatus.IN_PROGRESS,
+      RequestStatus.RESOLVED,
+      RequestStatus.CANCELLED,
+      RequestStatus.REJECTED,
+    ],
+    {
+      message: "Valid request status is required.",
+    },
+  ),
+});
+
 export const ServiceRequestValidation = {
   CreateServiceRequestZodSchema,
   AssignStaffZodSchema,
+  UpdateStatusZodSchema,
 };

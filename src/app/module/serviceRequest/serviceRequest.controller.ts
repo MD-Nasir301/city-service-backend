@@ -103,6 +103,26 @@ const assignStaff = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateServiceRequestStatus = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const user = req.user as { userId: string; role: Role };
+
+    const result = await ServiceRequestService.updateServiceRequestStatus(
+      id as string,
+      user,
+      req.body,
+    );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Service request status updated successfully",
+      data: result,
+    });
+  },
+);
+
 export const ServiceRequestController = {
   createServiceRequest,
   getAllServiceRequests,
@@ -110,4 +130,5 @@ export const ServiceRequestController = {
   getMyAssignedRequests,
   getSingleServiceRequest,
   assignStaff,
+  updateServiceRequestStatus,
 };

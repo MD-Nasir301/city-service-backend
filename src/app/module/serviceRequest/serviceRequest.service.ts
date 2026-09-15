@@ -367,11 +367,10 @@ const assignStaff = async (
     throw new AppError(404, "Target user not found or is not a staff.");
   }
 
- 
   //Database Transaction (Update + AuditLog)
   const result = await prisma.$transaction(async (tx) => {
     const updatedRequest = await tx.serviceRequest.update({
-      where: { id : serviceRequestId },
+      where: { id: serviceRequestId },
       data: {
         assignedStaffId: payload.assignedStaffId,
         status: RequestStatus.IN_PROGRESS,
@@ -400,6 +399,57 @@ const assignStaff = async (
   return result;
 };
 
+const updateServiceRequestStatus = async (
+  id: string,
+  user: { userId: string; role: Role },
+  payload: { status: RequestStatus },
+) => {
+
+  const serviceRequest = await prisma.serviceRequest.findFirst({
+    where: { id, isDeleted: false },
+  });
+
+  if (!serviceRequest) {
+    throw new AppError(404, "Service request not found.");
+  }
+
+  if (
+    user.role === Role.STAFF &&
+    serviceRequest.assignedStaffId !== user.userId
+  ) {
+    throw new AppError(
+      403,
+      "You can only update status for requests assigned to you.",
+    );
+  }
+
+  // 3. Transaction (Update Status + AuditLog)
+  const result = await prisma.$transaction(async (tx) => {
+    const updatedRequest = await tx.serviceRequest.update({
+      where: { id },
+      data: {
+        status: payload.status,
+      },
+    });
+
+    await createAuditLog(tx, {
+      action: AuditAction.UPDATE,
+      entityName: "ServiceRequest",
+      entityId: updatedRequest.id,
+      performedById: user.userId,
+      details: {
+        actionType: "UPDATE_STATUS",
+        previousStatus: serviceRequest.status,
+        newStatus: payload.status,
+      },
+    });
+
+    return updatedRequest;
+  });
+
+  return result;
+};
+
 export const ServiceRequestService = {
   createServiceRequest,
   getAllServiceRequests,
@@ -407,4 +457,5 @@ export const ServiceRequestService = {
   getMyAssignedRequests,
   getSingleServiceRequest,
   assignStaff,
+  updateServiceRequestStatus,
 };

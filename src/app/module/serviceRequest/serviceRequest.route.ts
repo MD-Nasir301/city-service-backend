@@ -41,7 +41,14 @@ router.patch(
   "/:serviceRequestId/assign",
   auth(Role.ADMIN, Role.SUPER_ADMIN),
   validateRequest(ServiceRequestValidation.AssignStaffZodSchema),
-  ServiceRequestController.assignStaff
+  ServiceRequestController.assignStaff,
+);
+
+router.patch(
+  "/:id/status",
+  auth(Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN),
+  validateRequest(ServiceRequestValidation.UpdateStatusZodSchema),
+  ServiceRequestController.updateServiceRequestStatus,
 );
 
 export const ServiceRequestRoutes = router;
