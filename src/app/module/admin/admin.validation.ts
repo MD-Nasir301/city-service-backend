@@ -1,6 +1,14 @@
-import { Request, Response } from "express";
-import { Prisma, Role, UserStatus } from "../../../generated/prisma/enums";
-import { prisma } from "../../lib/prisma";
-import { catchAsync } from "../../utils/catchAsync";
-import { sendResponse } from "../../utils/sendResponse";
-import AppError from "../../utils/appError";
+import z from "zod";
+import { UserStatus } from "../../../generated/prisma/enums";
+
+const UpdateUserStatusZodSchema = z.object({
+  status: z.enum([UserStatus.ACTIVE, UserStatus.BLOCKED], {
+    message: "Status must be either ACTIVE or BLOCKED",
+  }),
+});
+
+export const AdminValidation = {
+  UpdateUserStatusZodSchema,
+};
+
+
