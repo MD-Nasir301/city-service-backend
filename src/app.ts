@@ -13,6 +13,7 @@ import { AuthRoutes } from "./app/module/auth/auth.route";
 import { CategoryRoutes } from "./app/module/category/category.route";
 import { ServiceRequestRoutes } from "./app/module/serviceRequest/serviceRequest.route";
 import { UserRoutes } from "./app/module/users/users.route";
+import { AdminRoutes } from "./app/module/admin/admin.route";
 
 const app: Application = express();
 
@@ -34,6 +35,7 @@ app.use("/api/v1/auth", AuthRoutes);
 app.use("/api/v1/categories", CategoryRoutes);
 app.use("/api/v1/service-request", ServiceRequestRoutes);
 app.use("/api/v1/users", UserRoutes);
+app.use("/api/v1/admin", AdminRoutes);
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {

@@ -99,7 +99,7 @@ const getAllServiceRequests = async (query: IServiceRequestFilterParams) => {
   const limitNum = Number(limit);
   const skip = (pageNum - 1) * limitNum;
 
-  const andConditions: Prisma.ServiceRequestWhereInput[] = [];
+  const andConditions: Prisma.ServiceRequestWhereInput[] = [{ isDeleted: false }];
 
   if (search) {
     andConditions.push({
