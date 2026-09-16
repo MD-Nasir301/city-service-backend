@@ -6,7 +6,8 @@ model User {
   googleId           String?      @unique
   authProvider       AuthProvider @default(CREDENTIAL)
   phoneNumber        String?
-  avatar             String?
+  imageUrl           String?
+  imagePublicId      String?
   role               Role         @default(CITIZEN)
   status             UserStatus   @default(ACTIVE)
   emailVerified      Boolean      @default(false)
