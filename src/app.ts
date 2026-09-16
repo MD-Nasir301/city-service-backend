@@ -14,6 +14,7 @@ import { CategoryRoutes } from "./app/module/category/category.route";
 import { ServiceRequestRoutes } from "./app/module/serviceRequest/serviceRequest.route";
 import { UserRoutes } from "./app/module/users/users.route";
 import { AdminRoutes } from "./app/module/admin/admin.route";
+import { CommentRoutes } from "./app/module/comment/comments.route";
 
 const app: Application = express();
 
@@ -36,6 +37,7 @@ app.use("/api/v1/categories", CategoryRoutes);
 app.use("/api/v1/service-request", ServiceRequestRoutes);
 app.use("/api/v1/users", UserRoutes);
 app.use("/api/v1/admin", AdminRoutes);
+app.use("/api/v1/comment", CommentRoutes);
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {

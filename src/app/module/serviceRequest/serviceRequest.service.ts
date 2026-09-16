@@ -312,6 +312,8 @@ const getSingleServiceRequest = async (
   id: string,
   user: { userId: string; role: Role },
 ) => {
+
+  
   const result = await prisma.serviceRequest.findFirst({
     where: {
       id,
@@ -326,6 +328,9 @@ const getSingleServiceRequest = async (
       },
       assignedStaff: {
         select: { id: true, name: true, email: true, phoneNumber: true },
+      },
+      comments: {
+        select: { id: true, text: true, isInternal: true, createdAt: true },
       },
       payment: true,
     },

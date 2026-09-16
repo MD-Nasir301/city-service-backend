@@ -141,6 +141,7 @@ const updateUserStatus = async (
 
   return result;
 };
+
 export const AdminService = {
   getAllUsers,
   updateUserStatus,
