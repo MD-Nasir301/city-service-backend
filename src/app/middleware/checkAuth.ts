@@ -53,8 +53,6 @@ export const auth = (...requiredRoles: Role[]) => {
 			where: {
 				id: userId,
 				email,
-				name,
-				role,
 			},
 		});
 

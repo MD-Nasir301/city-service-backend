@@ -1,7 +1,7 @@
-
+import { cloudinary } from "../../lib/cloudinary";
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
-
+import { ICloudinaryResponse, IUpdateProfileInput } from "./users.interface";
 
 // Get Own Profile Details
 const getMe = async (userId: string) => {
@@ -26,11 +26,89 @@ const getMe = async (userId: string) => {
   if (!user) {
     throw new AppError(404, "User profile not found.");
   }
-
   return user;
 };
 
+// Helper: Upload Buffer to Cloudinary using Promise
+const uploadToCloudinary = (
+  file: Express.Multer.File,
+): Promise<ICloudinaryResponse> => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: "city_complaint_users" },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result as ICloudinaryResponse);
+      },
+    );
+    uploadStream.end(file.buffer);
+  });
+};
+
+// Helper: Delete Image from Cloudinary
+const deleteFromCloudinary = async (publicId: string): Promise<void> => {
+  if (publicId) {
+    await cloudinary.uploader.destroy(publicId);
+  }
+};
+
+// Update Profile Service
+const updateMe = async (
+  userId: string,
+  payload: IUpdateProfileInput,
+  file?: Express.Multer.File,
+) => {
+  // 1. Check user exists
+  const user = await prisma.user.findFirst({
+    where: { id: userId, isDeleted: false },
+  });
+
+  if (!user) {
+    throw new AppError(404, "User profile not found.");
+  }
+
+  let imageUrl = user.imageUrl;
+  let imagePublicId = user.imagePublicId;
+
+  //If new file uploaded, process Cloudinary upload
+  if (file) {
+    // Delete old image if public_id exists
+    if (user.imagePublicId) {
+      await deleteFromCloudinary(user.imagePublicId);
+    }
+
+    // Upload new image
+    const uploadResult = await uploadToCloudinary(file);
+    imageUrl = uploadResult.secure_url;
+    imagePublicId = uploadResult.public_id;
+  }
+
+  // Update Database Record
+  const result = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      name: payload.name,
+      phoneNumber: payload.phoneNumber,
+      imageUrl,
+      imagePublicId,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phoneNumber: true,
+      imageUrl: true,
+      imagePublicId: true,
+      role: true,
+      status: true,
+      updatedAt: true,
+    },
+  });
+
+  return result;
+};
 
 export const UserService = {
   getMe,
+  updateMe,
 };
