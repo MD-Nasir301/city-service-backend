@@ -21,7 +21,8 @@ const createServiceRequest = catchAsync(async (req: Request, res: Response) => {
 
 const getAllServiceRequests = catchAsync(
   async (req: Request, res: Response) => {
-    const result = await ServiceRequestService.getAllServiceRequests(req.query);
+    const user = req.user as { userId: string; role: Role };
+    const result = await ServiceRequestService.getAllServiceRequests(req.query, user);
 
     sendResponse(res, {
       statusCode: 200,

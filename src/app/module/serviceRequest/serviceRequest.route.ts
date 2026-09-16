@@ -15,7 +15,7 @@ router.post(
 );
 router.get(
   "/",
-  auth(Role.ADMIN, Role.SUPER_ADMIN),
+  auth(Role.CITIZEN, Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN),
   ServiceRequestController.getAllServiceRequests,
 );
 

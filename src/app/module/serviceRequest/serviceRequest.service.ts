@@ -82,7 +82,10 @@ const createServiceRequest = async (
 };
 
 // Get All Service Requests (Filter, Search & Pagination)
-const getAllServiceRequests = async (query: IServiceRequestFilterParams) => {
+const getAllServiceRequests = async (
+  query: IServiceRequestFilterParams,
+  user: { userId: string; role: Role }
+) => {
   const {
     search,
     status,
@@ -101,6 +104,23 @@ const getAllServiceRequests = async (query: IServiceRequestFilterParams) => {
 
   const andConditions: Prisma.ServiceRequestWhereInput[] = [{ isDeleted: false }];
 
+  if (user.role === Role.CITIZEN) {
+    andConditions.push({
+      OR: [
+        { category: { type: "FREE" } },
+        { citizenId: user.userId },
+      ],
+    });
+  } else if (user.role === Role.STAFF) {
+    andConditions.push({
+      OR: [
+        { category: { type: "FREE" } },
+        { assignedStaffId: user.userId },
+      ],
+    });
+  }
+
+  // Search Condition
   if (search) {
     andConditions.push({
       OR: [
@@ -142,10 +162,12 @@ const getAllServiceRequests = async (query: IServiceRequestFilterParams) => {
       assignedStaff: {
         select: { id: true, name: true },
       },
+      comments: {
+        select: { id: true, text: true },
+      },
     },
   });
 
-  // Total count for metadata
   const total = await prisma.serviceRequest.count({
     where: whereConditions,
   });
