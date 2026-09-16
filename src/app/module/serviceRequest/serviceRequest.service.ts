@@ -453,7 +453,6 @@ const deleteServiceRequest = async (
   id: string,
   user: { userId: string; role: Role },
 ) => {
- 
   const serviceRequest = await prisma.serviceRequest.findFirst({
     where: { id, isDeleted: false },
   });
@@ -502,6 +501,53 @@ const deleteServiceRequest = async (
   return result;
 };
 
+const updateServiceRequest = async (
+  id: string,
+  userId: string,
+  payload: Partial<ICreateServiceRequestInput>,
+) => {
+  const serviceRequest = await prisma.serviceRequest.findFirst({
+    where: { id, isDeleted: false },
+  });
+
+  if (!serviceRequest) {
+    throw new AppError(404, "Service request not found.");
+  }
+
+  if (serviceRequest.citizenId !== userId) {
+    throw new AppError(403, "You can only update your own service request.");
+  }
+
+  if (serviceRequest.status !== RequestStatus.PENDING) {
+    throw new AppError(
+      400,
+      "Cannot update service request once processing has started.",
+    );
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const updated = await tx.serviceRequest.update({
+      where: { id },
+      data: payload,
+    });
+
+    await createAuditLog(tx, {
+      action: AuditAction.UPDATE,
+      entityName: "ServiceRequest",
+      entityId: updated.id,
+      performedById: userId,
+      details: {
+        actionType: "UPDATE_REQUEST_DETAILS",
+        updatedFields: Object.keys(payload),
+      },
+    });
+
+    return updated;
+  });
+
+  return result;
+};
+
 export const ServiceRequestService = {
   createServiceRequest,
   getAllServiceRequests,
@@ -511,4 +557,5 @@ export const ServiceRequestService = {
   assignStaff,
   updateServiceRequestStatus,
   deleteServiceRequest,
+  updateServiceRequest,
 };

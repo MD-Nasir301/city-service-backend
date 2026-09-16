@@ -140,6 +140,24 @@ const deleteServiceRequest = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateServiceRequest = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const userId = req.user?.userId;
+
+  const result = await ServiceRequestService.updateServiceRequest(
+    id as string,
+    userId as string,
+    req.body,
+  );
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Service request updated successfully",
+    data: result,
+  });
+});
+
 export const ServiceRequestController = {
   createServiceRequest,
   getAllServiceRequests,
@@ -149,4 +167,5 @@ export const ServiceRequestController = {
   assignStaff,
   updateServiceRequestStatus,
   deleteServiceRequest,
+  updateServiceRequest,
 };

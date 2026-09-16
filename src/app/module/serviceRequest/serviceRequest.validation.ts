@@ -51,8 +51,28 @@ const UpdateStatusZodSchema = z.object({
   ),
 });
 
+const UpdateServiceRequestZodSchema = z.object({
+  title: z
+    .string()
+    .min(5, { message: "Title must be at least 5 characters long." })
+    .optional(),
+  description: z
+    .string()
+    .min(10, { message: "Description must be at least 10 characters long." })
+    .optional(),
+  address: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  images: z.array(z.string()).optional(),
+  priority: z
+    .enum([Priority.LOW, Priority.MEDIUM, Priority.HIGH, Priority.URGENT])
+    .optional(),
+  quantity: z.number().min(1).optional(),
+});
+
 export const ServiceRequestValidation = {
   CreateServiceRequestZodSchema,
   AssignStaffZodSchema,
   UpdateStatusZodSchema,
+  UpdateServiceRequestZodSchema,
 };
