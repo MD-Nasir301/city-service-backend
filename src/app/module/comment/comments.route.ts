@@ -15,4 +15,10 @@ router.post(
   CommentController.createComment
 );
 
+router.get(
+  "/:serviceRequestId",
+  auth(Role.CITIZEN, Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN),
+  CommentController.getCommentsByServiceRequestId
+);
+
 export const CommentRoutes = router;
