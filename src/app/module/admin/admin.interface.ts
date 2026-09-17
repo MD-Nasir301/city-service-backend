@@ -9,3 +9,25 @@ export interface IUserFilterables {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
+
+
+export interface IAdminDashboardStats {
+  users: {
+    totalUsers: number;
+    totalCitizens: number;
+    totalStaff: number;
+    totalAdmins: number;
+    totalSupperAdmins: number;
+  };
+  serviceRequests: {
+    totalRequests: number;
+    pendingRequests: number;
+    inProgressRequests: number;
+    resolvedRequests: number;
+    cancelledRequests: number;
+    rejectedRequests: number;
+  };
+  categories: {
+    totalCategories: number;
+  };
+}

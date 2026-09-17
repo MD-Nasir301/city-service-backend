@@ -24,7 +24,13 @@ router.patch(
   "/users/:id/role",
   auth(Role.ADMIN, Role.SUPER_ADMIN),
   validateRequest(AdminValidation.updateUserRoleZodSchema),
-  AdminController.updateUserRole
+  AdminController.updateUserRole,
+);
+
+router.get(
+  "/dashboard-stats",
+  auth(Role.ADMIN, Role.SUPER_ADMIN),
+  AdminController.getAdminDashboardStats,
 );
 
 export const AdminRoutes = router;

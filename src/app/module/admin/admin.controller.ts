@@ -57,8 +57,22 @@ const updateUserRole = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAdminDashboardStats = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await AdminService.getAdminDashboardStats();
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Admin dashboard stats retrieved successfully",
+      data: result,
+    });
+  },
+);
+
 export const AdminController = {
   getAllUsers,
   updateUserStatus,
   updateUserRole,
+  getAdminDashboardStats,
 };

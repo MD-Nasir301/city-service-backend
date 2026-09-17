@@ -1,8 +1,13 @@
-import { AuditAction, Role, UserStatus } from "../../../generated/prisma/enums";
+import {
+  AuditAction,
+  RequestStatus,
+  Role,
+  UserStatus,
+} from "../../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
 import { createAuditLog } from "../../utils/createAuditLog";
-import { IUserFilterables } from "./admin.interface";
+import { IAdminDashboardStats, IUserFilterables } from "./admin.interface";
 
 const getAllUsers = async (filters: IUserFilterables) => {
   const {
@@ -214,8 +219,66 @@ export const updateUserRole = async (
   return result;
 };
 
+const getAdminDashboardStats = async (): Promise<IAdminDashboardStats> => {
+  const [
+    totalUsers,
+    totalCitizens,
+    totalStaff,
+    totalAdmins,
+    totalSupperAdmins,
+    totalRequests,
+    pendingRequests,
+    inProgressRequests,
+    resolvedRequests,
+    cancelledRequests,
+    rejectedRequests,
+    totalCategories,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.count({ where: { role: Role.CITIZEN } }),
+    prisma.user.count({ where: { role: Role.STAFF } }),
+    prisma.user.count({
+      where: { role: { in: [Role.ADMIN] } },
+    }),
+    prisma.user.count({
+      where: { role: { in: [Role.SUPER_ADMIN] } },
+    }),
+    prisma.serviceRequest.count(),
+    prisma.serviceRequest.count({ where: { status: RequestStatus.PENDING } }),
+    prisma.serviceRequest.count({
+      where: { status: RequestStatus.IN_PROGRESS },
+    }),
+    prisma.serviceRequest.count({ where: { status: RequestStatus.RESOLVED } }),
+    prisma.serviceRequest.count({ where: { status: RequestStatus.CANCELLED } }),
+    prisma.serviceRequest.count({ where: { status: RequestStatus.REJECTED } }),
+    prisma.category.count(),
+  ]);
+
+  return {
+    users: {
+      totalUsers,
+      totalCitizens,
+      totalStaff,
+      totalAdmins,
+      totalSupperAdmins,
+    },
+    serviceRequests: {
+      totalRequests,
+      pendingRequests,
+      inProgressRequests,
+      resolvedRequests,
+      cancelledRequests,
+      rejectedRequests,
+    },
+    categories: {
+      totalCategories,
+    },
+  };
+};
+
 export const AdminService = {
   getAllUsers,
   updateUserStatus,
   updateUserRole,
+  getAdminDashboardStats,
 };
