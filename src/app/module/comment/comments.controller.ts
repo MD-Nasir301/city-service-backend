@@ -40,7 +40,27 @@ const getCommentsByServiceRequestId = catchAsync(
   },
 );
 
+const deleteComment = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const userId = req.user?.userId;
+  const userRole = req.user?.role;
+
+  const result = await CommentService.deleteComment(
+    id as string,
+    userId as string,
+    userRole as string,
+  );
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Comment deleted successfully",
+    data: result,
+  });
+});
+
 export const CommentController = {
   createComment,
   getCommentsByServiceRequestId,
+  deleteComment,
 };

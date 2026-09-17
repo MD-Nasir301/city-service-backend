@@ -112,7 +112,37 @@ const getCommentsByServiceRequestId = async (
   return result;
 };
 
+const deleteComment = async (
+  commentId: string,
+  userId: string,
+  userRole: string,
+) => {
+ 
+  const isCommentExist = await prisma.comment.findUnique({
+    where: { id: commentId },
+  });
+
+  if (!isCommentExist) {
+    throw new AppError(404, "Comment not found.");
+  }
+
+  const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
+  const isOwner = isCommentExist.userId === userId;
+
+  if (!isAdmin && !isOwner) {
+    throw new AppError(403, "You can only delete your own comments.");
+  }
+
+  
+  const result = await prisma.comment.delete({
+    where: { id: commentId },
+  });
+
+  return result;
+};
+
 export const CommentService = {
   createComment,
   getCommentsByServiceRequestId,
+  deleteComment,
 };

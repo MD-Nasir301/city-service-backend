@@ -21,4 +21,10 @@ router.get(
   CommentController.getCommentsByServiceRequestId
 );
 
+router.delete(
+  "/:id",
+  auth(Role.CITIZEN, Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN),
+  CommentController.deleteComment
+);
+
 export const CommentRoutes = router;
