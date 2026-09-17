@@ -1,9 +1,9 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, {
-	type Application,
-	type Request,
-	type Response,
+  type Application,
+  type Request,
+  type Response,
 } from "express";
 import httpStatus from "http-status";
 import config from "./app/config";
@@ -15,14 +15,15 @@ import { ServiceRequestRoutes } from "./app/module/serviceRequest/serviceRequest
 import { UserRoutes } from "./app/module/users/users.route";
 import { AdminRoutes } from "./app/module/admin/admin.route";
 import { CommentRoutes } from "./app/module/comment/comments.route";
+import { StaffRoutes } from "./app/module/staff/staff.route";
 
 const app: Application = express();
 
 app.use(
-	cors({
-		origin: config.frontend_url,
-		credentials: true,
-	}),
+  cors({
+    origin: config.frontend_url,
+    credentials: true,
+  }),
 );
 
 // Enable URL-encoded form data parsing
@@ -37,14 +38,15 @@ app.use("/api/v1/categories", CategoryRoutes);
 app.use("/api/v1/service-request", ServiceRequestRoutes);
 app.use("/api/v1/users", UserRoutes);
 app.use("/api/v1/admin", AdminRoutes);
+app.use("/api/v1/staff", StaffRoutes);
 app.use("/api/v1/comment", CommentRoutes);
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {
-	res.status(httpStatus.OK).json({
-		success: true,
-		message: "Welcome to City Services Backend",
-	});
+  res.status(httpStatus.OK).json({
+    success: true,
+    message: "Welcome to City Services Backend",
+  });
 });
 
 app.use(globalErrorHandler);
