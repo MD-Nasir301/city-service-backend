@@ -12,6 +12,19 @@ const CreateCommentZodSchema = z.object({
   isInternal: z.boolean().optional(),
 });
 
+
+const UpdateCommentZodSchema = z.object({
+  text: z
+    .string({
+      message: "Comment text must be a string.",
+    })
+    .min(1, { message: "Comment text cannot be empty." })
+    .optional(),
+  isInternal: z.boolean().optional(),
+});
+
 export const CommentValidation = {
   CreateCommentZodSchema,
+  UpdateCommentZodSchema,
 };
+

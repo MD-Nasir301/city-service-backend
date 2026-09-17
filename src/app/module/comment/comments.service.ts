@@ -1,7 +1,7 @@
 import { Role } from "../../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
-import { ICreateCommentInput } from "./comments.interface";
+import { ICreateCommentInput, IUpdateCommentInput } from "./comments.interface";
 
 const createComment = async (
   userId: string,
@@ -141,8 +141,53 @@ const deleteComment = async (
   return result;
 };
 
+
+export const updateComment = async (
+  commentId: string,
+  userId: string,
+  userRole: string,
+  payload: IUpdateCommentInput
+) => {
+
+  const isCommentExist = await prisma.comment.findUnique({
+    where: { id: commentId },
+  });
+
+  if (!isCommentExist) {
+    throw new AppError(404, "Comment not found.");
+  }
+
+  const isOwner = isCommentExist.userId === userId;
+
+  if (!isOwner) {
+    throw new AppError(403, "You can only update your own comments.");
+  }
+
+  let isInternalNote = payload.isInternal;
+  if (userRole === Role.CITIZEN) {
+    isInternalNote = false;
+  }
+
+  const result = await prisma.comment.update({
+    where: { id: commentId },
+    data: {
+      text: payload.text,
+      isInternal: isInternalNote,
+    },
+    select: {
+      id: true,
+      text: true,
+      isInternal: true,
+      updatedAt: true,
+    },
+  });
+
+  return result;
+};
 export const CommentService = {
   createComment,
   getCommentsByServiceRequestId,
   deleteComment,
+  updateComment,
 };
+
