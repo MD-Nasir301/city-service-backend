@@ -142,7 +142,80 @@ const updateUserStatus = async (
   return result;
 };
 
+export const updateUserRole = async (
+  targetUserId: string,
+  newRole: Role,
+  performerId: string,
+  performerRole: string,
+) => {
+  const targetUser = await prisma.user.findUnique({
+    where: { id: targetUserId },
+  });
+
+  if (!targetUser) {
+    throw new AppError(404, "Target user not found.");
+  }
+
+  if (performerRole === Role.STAFF || performerRole === Role.CITIZEN) {
+    throw new AppError(403, "You do not have permission to change user roles.");
+  }
+
+  if (targetUserId === performerId) {
+    throw new AppError(400, "You cannot change your own role.");
+  }
+
+  if (targetUser.role === Role.SUPER_ADMIN) {
+    throw new AppError(
+      403,
+      "Super Admin role is immutable and cannot be changed.",
+    );
+  }
+
+  if (newRole === Role.SUPER_ADMIN && performerRole !== Role.SUPER_ADMIN) {
+    throw new AppError(
+      403,
+      "Only a Super Admin can promote someone to Super Admin.",
+    );
+  }
+
+  if (performerRole === Role.ADMIN && targetUser.role === Role.ADMIN) {
+    throw new AppError(403, "Admins cannot modify the role of another Admin.");
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const updatedUser = await tx.user.update({
+      where: { id: targetUserId },
+      data: { role: newRole },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        updatedAt: true,
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        action: AuditAction.UPDATE,
+        entityName: "User",
+        entityId: targetUserId,
+        performedById: performerId,
+        details: {
+          previousRole: targetUser.role,
+          newRole: newRole,
+        },
+      },
+    });
+
+    return updatedUser;
+  });
+
+  return result;
+};
+
 export const AdminService = {
   getAllUsers,
   updateUserStatus,
+  updateUserRole,
 };

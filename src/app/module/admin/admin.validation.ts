@@ -1,4 +1,5 @@
 import z from "zod";
+import { Role } from "../../../generated/prisma/enums";
 import { UserStatus } from "../../../generated/prisma/enums";
 
 const UpdateUserStatusZodSchema = z.object({
@@ -7,8 +8,13 @@ const UpdateUserStatusZodSchema = z.object({
   }),
 });
 
+const updateUserRoleZodSchema = z.object({
+  role: z.enum([Role.SUPER_ADMIN, Role.ADMIN, Role.CITIZEN, Role.STAFF], {
+    message: "Invalid role provided.",
+  }),
+});
+
 export const AdminValidation = {
   UpdateUserStatusZodSchema,
+  updateUserRoleZodSchema,
 };
-
-

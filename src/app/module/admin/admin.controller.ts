@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { AdminService } from "./admin.service";
+import { UserService } from "../users/users.service";
 
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   const result = await AdminService.getAllUsers(req.query);
@@ -35,7 +36,29 @@ const updateUserStatus = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateUserRole = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { role } = req.body;
+  const performerId = req.user?.userId;
+  const performerRole = req.user?.role;
+
+  const result = await AdminService.updateUserRole(
+    id as string,
+    role,
+    performerId as string,
+    performerRole as string,
+  );
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "User role updated successfully",
+    data: result,
+  });
+});
+
 export const AdminController = {
   getAllUsers,
   updateUserStatus,
+  updateUserRole,
 };

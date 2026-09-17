@@ -20,4 +20,11 @@ router.patch(
   AdminController.updateUserStatus,
 );
 
+router.patch(
+  "/users/:id/role",
+  auth(Role.ADMIN, Role.SUPER_ADMIN),
+  validateRequest(AdminValidation.updateUserRoleZodSchema),
+  AdminController.updateUserRole
+);
+
 export const AdminRoutes = router;
