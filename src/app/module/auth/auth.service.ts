@@ -25,6 +25,7 @@ import type {
   IVerifyEmailPayload,
 } from "./auth.interface";
 
+
 const registerCitizen = async (payload: IRegisterCitizenPayload) => {
   const { name, password, phoneNumber } = payload;
   const email = payload.email.trim().toLowerCase();
@@ -249,23 +250,6 @@ const loginUser = async (payload: ILoginUserPayload) => {
     accessToken,
     refreshToken,
   };
-};
-
-const getMe = async (user: IRequestUser) => {
-  const isUserExists = await prisma.user.findUnique({
-    where: {
-      id: user.userId,
-    },
-    omit: {
-      password: true,
-    },
-  });
-
-  if (!isUserExists) {
-    throw new Error("User not found");
-  }
-
-  return isUserExists;
 };
 
 const refreshToken = async (token: string) => {
@@ -575,7 +559,6 @@ export const AuthService = {
   registerCitizen,
   verifyCitizenEmail,
   loginUser,
-  getMe,
   refreshToken,
   googleLoginService,
   forgotPassword,
