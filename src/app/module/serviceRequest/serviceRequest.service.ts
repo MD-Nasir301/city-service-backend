@@ -84,7 +84,7 @@ const createServiceRequest = async (
 // Get All Service Requests (Filter, Search & Pagination)
 const getAllServiceRequests = async (
   query: IServiceRequestFilterParams,
-  user: { userId: string; role: Role }
+  user: { userId: string; role: Role },
 ) => {
   const {
     search,
@@ -102,21 +102,17 @@ const getAllServiceRequests = async (
   const limitNum = Number(limit);
   const skip = (pageNum - 1) * limitNum;
 
-  const andConditions: Prisma.ServiceRequestWhereInput[] = [{ isDeleted: false }];
+  const andConditions: Prisma.ServiceRequestWhereInput[] = [
+    { isDeleted: false },
+  ];
 
   if (user.role === Role.CITIZEN) {
     andConditions.push({
-      OR: [
-        { category: { type: "FREE" } },
-        { citizenId: user.userId },
-      ],
+      OR: [{ category: { type: "FREE" } }, { citizenId: user.userId }],
     });
   } else if (user.role === Role.STAFF) {
     andConditions.push({
-      OR: [
-        { category: { type: "FREE" } },
-        { assignedStaffId: user.userId },
-      ],
+      OR: [{ category: { type: "FREE" } }, { assignedStaffId: user.userId }],
     });
   }
 
@@ -334,8 +330,6 @@ const getSingleServiceRequest = async (
   id: string,
   user: { userId: string; role: Role },
 ) => {
-
-  
   const result = await prisma.serviceRequest.findFirst({
     where: {
       id,
@@ -406,7 +400,7 @@ const assignStaff = async (
 
     if (adminId) {
       await createAuditLog(tx, {
-        action: AuditAction.UPDATE,
+        action: AuditAction.ASSIGNMENT,
         entityName: "ServiceRequest",
         entityId: updatedRequest.id,
         performedById: adminId,
@@ -459,7 +453,7 @@ const updateServiceRequestStatus = async (
     });
 
     await createAuditLog(tx, {
-      action: AuditAction.UPDATE,
+      action: AuditAction.STATUS_CHANGE,
       entityName: "ServiceRequest",
       entityId: updatedRequest.id,
       performedById: user.userId,

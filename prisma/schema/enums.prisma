@@ -50,4 +50,5 @@ enum AuditAction {
   DELETE
   STATUS_CHANGE
   ASSIGNMENT
+  ROLE_CHANGE
 }

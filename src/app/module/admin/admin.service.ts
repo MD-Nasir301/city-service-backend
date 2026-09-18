@@ -10,8 +10,6 @@ import { createAuditLog } from "../../utils/createAuditLog";
 import {
   IAdminDashboardStats,
   IAuditLogFilterables,
-  IAuditLogFilterRequest,
-  IPaginationOptions,
   IUserFilterables,
 } from "./admin.interface";
 
@@ -135,7 +133,7 @@ const updateUserStatus = async (
     });
 
     await createAuditLog(tx, {
-      action: AuditAction.UPDATE,
+      action: AuditAction.STATUS_CHANGE,
       entityName: "User",
       entityId: updatedUser.id,
       performedById: adminId,
@@ -208,7 +206,7 @@ export const updateUserRole = async (
 
     await tx.auditLog.create({
       data: {
-        action: AuditAction.UPDATE,
+        action: AuditAction.ROLE_CHANGE,
         entityName: "User",
         entityId: targetUserId,
         performedById: performerId,
