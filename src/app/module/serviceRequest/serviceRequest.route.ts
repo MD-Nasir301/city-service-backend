@@ -4,15 +4,17 @@ import { auth } from "../../middleware/checkAuth";
 import { validateRequest } from "../../middleware/validateRequest";
 import { ServiceRequestController } from "./serviceRequest.controller";
 import { ServiceRequestValidation } from "./serviceRequest.validation";
+import { upload } from "../../lib/multer";
 
 const router = express.Router();
 
 router.post(
   "/",
-  auth(Role.CITIZEN, Role.ADMIN, Role.SUPER_ADMIN),
-  validateRequest(ServiceRequestValidation.CreateServiceRequestZodSchema),
+  auth(Role.ADMIN, Role.CITIZEN, Role.SUPER_ADMIN),
+  upload.array("images", 3),
   ServiceRequestController.createServiceRequest,
 );
+
 router.get(
   "/",
   auth(Role.CITIZEN, Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN),
@@ -54,14 +56,14 @@ router.patch(
 router.delete(
   "/:id",
   auth(Role.CITIZEN, Role.ADMIN, Role.SUPER_ADMIN),
-  ServiceRequestController.deleteServiceRequest
+  ServiceRequestController.deleteServiceRequest,
 );
 
 router.patch(
   "/:id",
   auth(Role.CITIZEN, Role.ADMIN, Role.SUPER_ADMIN),
   validateRequest(ServiceRequestValidation.UpdateServiceRequestZodSchema),
-  ServiceRequestController.updateServiceRequest
+  ServiceRequestController.updateServiceRequest,
 );
 
 export const ServiceRequestRoutes = router;

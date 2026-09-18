@@ -3,26 +3,46 @@ import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { ServiceRequestService } from "./serviceRequest.service";
 import { Role } from "../../../generated/prisma/enums";
+import { uploadToCloudinary } from "../../utils/cloudinary";
 
-const createServiceRequest = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user?.userId;
-  const result = await ServiceRequestService.createServiceRequest(
-    userId as string,
-    req.body,
-  );
+export const createServiceRequest = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.userId as string;
 
-  sendResponse(res, {
-    statusCode: 201,
-    success: true,
-    message: "Service request submitted successfully",
-    data: result,
-  });
-});
+    const payload =
+      typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
+    const imageUrls: string[] = [];
+
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      for (const file of req.files as Express.Multer.File[]) {
+        const uploadResult = await uploadToCloudinary(
+          file,
+          "city_complaints_requests",
+        );
+        imageUrls.push(uploadResult.secure_url);
+      }
+    }
+    const result = await ServiceRequestService.createServiceRequest(userId, {
+      ...payload,
+      images: imageUrls,
+    });
+
+    res.status(201).json({
+      success: true,
+      statusCode: 201,
+      message: "Service request created successfully",
+      data: result,
+    });
+  },
+);
 
 const getAllServiceRequests = catchAsync(
   async (req: Request, res: Response) => {
     const user = req.user as { userId: string; role: Role };
-    const result = await ServiceRequestService.getAllServiceRequests(req.query, user);
+    const result = await ServiceRequestService.getAllServiceRequests(
+      req.query,
+      user,
+    );
 
     sendResponse(res, {
       statusCode: 200,

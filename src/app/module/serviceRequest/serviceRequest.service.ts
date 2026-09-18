@@ -2,6 +2,7 @@ import { Prisma } from "../../../generated/prisma/client";
 import {
   AuditAction,
   CategoryType,
+  EntityName,
   RequestStatus,
   Role,
 } from "../../../generated/prisma/enums";
@@ -15,11 +16,11 @@ import {
   IServiceRequestFilterParams,
 } from "./serviceRequest.interface";
 
-const createServiceRequest = async (
+export const createServiceRequest = async (
   userId: string,
-  payload: ICreateServiceRequestInput,
+  payload: ICreateServiceRequestInput
 ) => {
-  // 1. Verify Category exists and is active
+  
   const category = await prisma.category.findFirst({
     where: { id: payload.categoryId, isDeleted: false, isActive: true },
   });
@@ -27,11 +28,11 @@ const createServiceRequest = async (
   if (!category) {
     throw new AppError(
       404,
-      "Selected service category was not found or is inactive.",
+      "Selected service category was not found or is inactive."
     );
   }
 
-  // 2. Pricing Calculation Logic
+  // Pricing Calculation Logic
   let calculatedAmount = 0;
   let quantity = 1;
 
@@ -41,7 +42,7 @@ const createServiceRequest = async (
     calculatedAmount = basePrice * quantity;
   }
 
-  // 3. Database Transaction (ServiceRequest + AuditLog)
+  // Database Transaction (ServiceRequest + AuditLog)
   const result = await prisma.$transaction(async (tx) => {
     const newRequest = await tx.serviceRequest.create({
       data: {
@@ -52,8 +53,8 @@ const createServiceRequest = async (
         address: payload.address,
         latitude: payload.latitude,
         longitude: payload.longitude,
-        images: payload.images || [],
-        priority: payload.priority || "MEDIUM",
+        images: payload.images || [], 
+        priority: payload.priority,
         quantity: quantity,
         totalAmount: calculatedAmount,
         isPaid: category.type === CategoryType.FREE,
@@ -64,7 +65,7 @@ const createServiceRequest = async (
     // Create Audit Log
     await createAuditLog(tx, {
       action: AuditAction.CREATE,
-      entityName: "ServiceRequest",
+      entityName: EntityName.SERVICE,
       entityId: newRequest.id,
       performedById: userId,
       details: {

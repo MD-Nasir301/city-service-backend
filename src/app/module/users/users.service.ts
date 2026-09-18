@@ -1,6 +1,7 @@
 import { cloudinary } from "../../lib/cloudinary";
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
+import { deleteFromCloudinary, uploadToCloudinary } from "../../utils/cloudinary";
 import { ICloudinaryResponse, IUpdateProfileInput } from "./users.interface";
 
 // Get Own Profile Details
@@ -29,28 +30,6 @@ const getMe = async (userId: string) => {
   return user;
 };
 
-// Helper: Upload Buffer to Cloudinary using Promise
-const uploadToCloudinary = (
-  file: Express.Multer.File,
-): Promise<ICloudinaryResponse> => {
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      { folder: "city_complaint_users" },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result as ICloudinaryResponse);
-      },
-    );
-    uploadStream.end(file.buffer);
-  });
-};
-
-// Helper: Delete Image from Cloudinary
-const deleteFromCloudinary = async (publicId: string): Promise<void> => {
-  if (publicId) {
-    await cloudinary.uploader.destroy(publicId);
-  }
-};
 
 // Update Profile Service
 const updateMe = async (
@@ -70,7 +49,6 @@ const updateMe = async (
   let imageUrl = user.imageUrl;
   let imagePublicId = user.imagePublicId;
 
-  //If new file uploaded, process Cloudinary upload
   if (file) {
     // Delete old image if public_id exists
     if (user.imagePublicId) {
