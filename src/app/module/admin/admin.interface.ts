@@ -1,4 +1,4 @@
-import { Role, UserStatus } from "../../../generated/prisma/enums";
+import { AuditAction, Role, UserStatus } from "../../../generated/prisma/enums";
 
 export interface IUserFilterables {
   search?: string;
@@ -30,4 +30,15 @@ export interface IAdminDashboardStats {
   categories: {
     totalCategories: number;
   };
+}
+
+export interface IAuditLogFilterables {
+  search?: string;
+  action?: AuditAction
+  entityName?: string;
+  performedById?: string;
+  page?: string;
+  limit?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }

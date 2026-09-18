@@ -7,7 +7,13 @@ import {
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
 import { createAuditLog } from "../../utils/createAuditLog";
-import { IAdminDashboardStats, IUserFilterables } from "./admin.interface";
+import {
+  IAdminDashboardStats,
+  IAuditLogFilterables,
+  IAuditLogFilterRequest,
+  IPaginationOptions,
+  IUserFilterables,
+} from "./admin.interface";
 
 const getAllUsers = async (filters: IUserFilterables) => {
   const {
@@ -111,7 +117,7 @@ const updateUserStatus = async (
     throw new AppError(403, "An Admin cannot block or modify another Admin!");
   }
 
-  // 5. Transaction (Update Status + AuditLog)
+  // Transaction (Update Status + AuditLog)
   const result = await prisma.$transaction(async (tx) => {
     const updatedUser = await tx.user.update({
       where: { id: targetUserId },
@@ -276,9 +282,106 @@ const getAdminDashboardStats = async (): Promise<IAdminDashboardStats> => {
   };
 };
 
+const getAllAuditLogs = async (filters: IAuditLogFilterables) => {
+  const {
+    search,
+    action,
+    entityName,
+    performedById,
+    page = "1",
+    limit = "10",
+    sortBy = "createdAt",
+    sortOrder = "desc",
+  } = filters;
+
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
+  const skip = (pageNum - 1) * limitNum;
+  const andConditions: any[] = [];
+
+  // Search Logic
+  if (search) {
+    andConditions.push({
+      OR: [
+        { entityName: { contains: search, mode: "insensitive" } },
+        { entityId: { contains: search, mode: "insensitive" } },
+        {
+          performedBy: {
+            is: {
+              name: { contains: search, mode: "insensitive" },
+            },
+          },
+        },
+        {
+          performedBy: {
+            is: {
+              email: { contains: search, mode: "insensitive" },
+            },
+          },
+        },
+      ],
+    });
+  }
+
+  // Action Filter
+  if (action) {
+    andConditions.push({ action });
+  }
+
+  // EntityName Filter
+  if (entityName) {
+    andConditions.push({ entityName });
+  }
+
+  // PerformedById Filter
+  if (performedById) {
+    andConditions.push({ performedById });
+  }
+
+  const whereConditions =
+    andConditions.length > 0 ? { AND: andConditions } : {};
+
+  //console.log("WHERE CONDITIONS:", JSON.stringify(whereConditions, null, 2));
+
+  // Database Queries
+  const result = await prisma.auditLog.findMany({
+    where: whereConditions,
+    skip,
+    take: limitNum,
+    orderBy: {
+      [sortBy]: sortOrder,
+    },
+    include: {
+      performedBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      },
+    },
+  });
+
+  const total = await prisma.auditLog.count({
+    where: whereConditions,
+  });
+
+  return {
+    meta: {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      totalPages: Math.ceil(total / limitNum),
+    },
+    data: result,
+  };
+};
+
 export const AdminService = {
   getAllUsers,
   updateUserStatus,
   updateUserRole,
   getAdminDashboardStats,
+  getAllAuditLogs,
 };

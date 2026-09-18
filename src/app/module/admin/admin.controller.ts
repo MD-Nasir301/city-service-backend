@@ -70,9 +70,24 @@ const getAdminDashboardStats = catchAsync(
   },
 );
 
+const getAllAuditLogs = catchAsync(async (req: Request, res: Response) => {
+  const filters = req.query;
+
+  const result = await AdminService.getAllAuditLogs(filters);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Audit logs retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
 export const AdminController = {
   getAllUsers,
   updateUserStatus,
   updateUserRole,
   getAdminDashboardStats,
+  getAllAuditLogs,
 };

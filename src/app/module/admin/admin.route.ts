@@ -33,4 +33,10 @@ router.get(
   AdminController.getAdminDashboardStats,
 );
 
+router.get(
+  "/audit-logs",
+  auth(Role.ADMIN, Role.SUPER_ADMIN),
+  AdminController.getAllAuditLogs,
+);
+
 export const AdminRoutes = router;
