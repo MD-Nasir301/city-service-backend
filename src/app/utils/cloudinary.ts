@@ -1,5 +1,5 @@
 
-// src/app/utils/cloudinary.ts
+
 import { cloudinary } from "../lib/cloudinary";
 import { ICloudinaryResponse } from "../modules/user/users.interface";
 
@@ -19,8 +19,11 @@ export const uploadToCloudinary = (
   });
 };
 
-export const deleteFromCloudinary = async (publicId: string): Promise<void> => {
-  if (publicId) {
-    await cloudinary.uploader.destroy(publicId);
-  }
+export const deleteFromCloudinary = async (publicId: string): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.destroy(publicId, (error, result) => {
+      if (error) return reject(error);
+      resolve(result);
+    });
+  });
 };

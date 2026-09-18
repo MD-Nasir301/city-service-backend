@@ -11,7 +11,9 @@ export const createServiceRequest = catchAsync(
 
     const payload =
       typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
+
     const imageUrls: string[] = [];
+    const imagePublicIds: string[] = [];
 
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       for (const file of req.files as Express.Multer.File[]) {
@@ -20,11 +22,14 @@ export const createServiceRequest = catchAsync(
           "city_complaints_requests",
         );
         imageUrls.push(uploadResult.secure_url);
+        imagePublicIds.push(uploadResult.public_id); // public_id স্টোর করছি
       }
     }
+
     const result = await ServiceRequestService.createServiceRequest(userId, {
       ...payload,
       images: imageUrls,
+      imagePublicIds: imagePublicIds,
     });
 
     res.status(201).json({
@@ -161,23 +166,53 @@ const deleteServiceRequest = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const updateServiceRequest = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const userId = req.user?.userId;
+export const updateServiceRequest = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const userId = req.user?.userId;
 
-  const result = await ServiceRequestService.updateServiceRequest(
-    id as string,
-    userId as string,
-    req.body,
-  );
+    const payload = typeof req.body.data === "string" ? JSON.parse(req.body.data) : { ...req.body };
 
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "Service request updated successfully",
-    data: result,
-  });
-});
+    if (payload.latitude !== undefined && payload.latitude !== "") {
+      payload.latitude = parseFloat(payload.latitude);
+    }
+    if (payload.longitude !== undefined && payload.longitude !== "") {
+      payload.longitude = parseFloat(payload.longitude);
+    }
+    if (payload.quantity !== undefined && payload.quantity !== "") {
+      payload.quantity = parseInt(payload.quantity, 10);
+    }
+    const imageUrls: string[] = [];
+    const imagePublicIds: string[] = [];
+
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      for (const file of req.files as Express.Multer.File[]) {
+        const uploadResult = await uploadToCloudinary(
+          file,
+          "city_complaints_requests"
+        );
+        imageUrls.push(uploadResult.secure_url);
+        imagePublicIds.push(uploadResult.public_id);
+      }
+
+      payload.images = imageUrls;
+      payload.imagePublicIds = imagePublicIds;
+    }
+ল
+    const result = await ServiceRequestService.updateServiceRequest(
+      id as string,
+      userId as string,
+      payload
+    );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Service request updated successfully",
+      data: result,
+    });
+  }
+);
 
 export const ServiceRequestController = {
   createServiceRequest,

@@ -1,23 +1,23 @@
 model User {
-  id                 String        @id @default(uuid())
+  id                 String       @id @default(uuid())
   name               String
-  email              String        @unique
+  email              String       @unique
   password           String?
-  googleId           String?       @unique
-  authProvider       AuthProvider  @default(CREDENTIAL)
+  googleId           String?      @unique
+  authProvider       AuthProvider @default(CREDENTIAL)
   phoneNumber        String?
   imageUrl           String?
   imagePublicId      String?
-  role               Role          @default(CITIZEN)
-  status             UserStatus    @default(ACTIVE)
-  emailVerified      Boolean       @default(false)
-  needPasswordChange Boolean       @default(false)
-  isDeleted          Boolean       @default(false)
+  role               Role         @default(CITIZEN)
+  status             UserStatus   @default(ACTIVE)
+  emailVerified      Boolean      @default(false)
+  needPasswordChange Boolean      @default(false)
+  isDeleted          Boolean      @default(false)
   deletedAt          DateTime?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 
-  staffProfile       StaffProfile?
+  staffProfile        StaffProfile?
   complaintsSubmitted ServiceRequest[] @relation("CitizenRequests")
   complaintsAssigned  ServiceRequest[] @relation("AssignedStaffRequests")
   payments            Payment[]

@@ -4,10 +4,10 @@ model AuditLog {
   entityName String
   entityId   String
   details    Json?
-  createdAt DateTime @default(now())
+  createdAt  DateTime    @default(now())
 
   performedById String
   performedBy   User   @relation(fields: [performedById], references: [id], onDelete: Cascade)
- 
+
   @@map("audit_logs")
 }

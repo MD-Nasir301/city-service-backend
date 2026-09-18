@@ -11,7 +11,7 @@ const router = express.Router();
 router.post(
   "/",
   auth(Role.ADMIN, Role.CITIZEN, Role.SUPER_ADMIN),
-  upload.array("images", 3),
+  upload.array("images", 4),
   ServiceRequestController.createServiceRequest,
 );
 
@@ -62,7 +62,7 @@ router.delete(
 router.patch(
   "/:id",
   auth(Role.CITIZEN, Role.ADMIN, Role.SUPER_ADMIN),
-  validateRequest(ServiceRequestValidation.UpdateServiceRequestZodSchema),
+  upload.array("images", 4),
   ServiceRequestController.updateServiceRequest,
 );
 

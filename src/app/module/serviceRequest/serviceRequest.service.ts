@@ -8,6 +8,7 @@ import {
 } from "../../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
+import { deleteFromCloudinary } from "../../utils/cloudinary";
 import { createAuditLog } from "../../utils/createAuditLog";
 import {
   ICreateServiceRequestInput,
@@ -523,10 +524,13 @@ const deleteServiceRequest = async (
   return result;
 };
 
-const updateServiceRequest = async (
+export const updateServiceRequest = async (
   id: string,
   userId: string,
-  payload: Partial<ICreateServiceRequestInput>,
+  payload: Partial<ICreateServiceRequestInput> & {
+    images?: string[];
+    imagePublicIds?: string[];
+  }
 ) => {
   const serviceRequest = await prisma.serviceRequest.findFirst({
     where: { id, isDeleted: false },
@@ -543,8 +547,16 @@ const updateServiceRequest = async (
   if (serviceRequest.status !== RequestStatus.PENDING) {
     throw new AppError(
       400,
-      "Cannot update service request once processing has started.",
+      "Cannot update service request once processing has started."
     );
+  }
+
+  if (payload.imagePublicIds && payload.imagePublicIds.length > 0) {
+    if (serviceRequest.imagePublicIds && serviceRequest.imagePublicIds.length > 0) {
+      for (const publicId of serviceRequest.imagePublicIds) {
+        await deleteFromCloudinary(publicId);
+      }
+    }
   }
 
   const result = await prisma.$transaction(async (tx) => {
