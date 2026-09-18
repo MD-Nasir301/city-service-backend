@@ -1,5 +1,6 @@
-import { error } from "node:console";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import ejs from "ejs";
 import type { TokenPayload } from "google-auth-library";
 import type { JwtPayload, SignOptions } from "jsonwebtoken";
 import path from "path";
@@ -10,7 +11,9 @@ import {
 } from "../../../generated/prisma/enums";
 import config from "../../config";
 import { googleClient } from "../../lib/googlAuth";
+import { transporter } from "../../lib/notemailter";
 import { prisma } from "../../lib/prisma";
+import { redisCLient } from "../../lib/redis";
 import { jwtUtils } from "../../utils/jwt";
 import type {
   IForgotPasswordPayload,
@@ -21,10 +24,6 @@ import type {
   IResetPasswordPayload,
   IVerifyEmailPayload,
 } from "./auth.interface";
-import crypto from "crypto";
-import { redisCLient } from "../../lib/redis";
-import { transporter } from "../../lib/notemailter";
-import ejs from "ejs";
 
 const registerCitizen = async (payload: IRegisterCitizenPayload) => {
   const { name, password, phoneNumber } = payload;
@@ -38,7 +37,10 @@ const registerCitizen = async (payload: IRegisterCitizenPayload) => {
     throw new Error("User with this email already exists");
   }
 
-  const hashedPassword = await bcrypt.hash(password, 8);
+  const hashedPassword = await bcrypt.hash(
+    password,
+    Number(config.bcrypt_salt_rounds) || 12,
+  );
 
   const expirationSeconds = 5 * 60;
   const otpkey = `citizen-registration-otp:${email}`;
@@ -117,8 +119,6 @@ const verifyCitizenEmail = async (payload: IVerifyEmailPayload) => {
     throw new Error("OTP does not match");
   }
 
-  await redisCLient.del(otpkey);
-
   const citizenRegistrationKey = `citizen-registration-data:${email}`;
   const redisCitizenData = await redisCLient.get(citizenRegistrationKey);
 
@@ -141,13 +141,14 @@ const verifyCitizenEmail = async (payload: IVerifyEmailPayload) => {
     omit: { password: true },
   });
 
+  await redisCLient.del(otpkey);
   await redisCLient.del(citizenRegistrationKey);
 
   const templatePath = path.join(
     process.cwd(),
     "src/app/templates/citizen-welcome-email.ejs",
   );
-  
+
   let html = "";
   try {
     html = await ejs.renderFile(templatePath, {
@@ -169,6 +170,7 @@ const verifyCitizenEmail = async (payload: IVerifyEmailPayload) => {
     name: createdUser.name,
     email: createdUser.email,
     role: createdUser.role,
+    needPasswordChange: false,
   };
 
   const accessToken = jwtUtils.createToken(
@@ -228,6 +230,7 @@ const loginUser = async (payload: ILoginUserPayload) => {
     name: user.name,
     email: user.email,
     role: user.role,
+    needPasswordChange: user.needPasswordChange,
   };
 
   const accessToken = jwtUtils.createToken(
@@ -294,6 +297,7 @@ const refreshToken = async (token: string) => {
     name: user.name,
     email: user.email,
     role: user.role,
+    needPasswordChange: user.needPasswordChange,
   };
 
   const accessToken = jwtUtils.createToken(
@@ -323,7 +327,6 @@ const googleLoginService = async (payload: IGooglePayload) => {
     });
     googleIdTokenPayload = ticket.getPayload();
   } catch {
-    console.log("Google ID Token Verification Failed Error ", error);
     throw new Error("Invalid or Expired Google Id Token ");
   }
 
@@ -426,6 +429,7 @@ const googleLoginService = async (payload: IGooglePayload) => {
     name: user.name,
     email: user.email,
     role: user.role,
+    needPasswordChange: user.needPasswordChange,
   };
 
   const accessToken = jwtUtils.createToken(
@@ -549,7 +553,7 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
     },
   });
 
-  await redisCLient.del([key]);
+  await redisCLient.del(key);
 
   const templatePath = path.join(
     process.cwd(),
