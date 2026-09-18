@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "EntityName" AS ENUM ('STAFF', 'CITIZEN', 'SERVICE', 'DEPARTMENT');
+
+-- AlterEnum
+ALTER TYPE "AuditAction" ADD VALUE 'CREATE_STAFF';

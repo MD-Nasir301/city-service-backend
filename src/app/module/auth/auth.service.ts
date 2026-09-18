@@ -24,7 +24,7 @@ import type {
   IResetPasswordPayload,
   IVerifyEmailPayload,
 } from "./auth.interface";
-
+import AppError from "../../utils/appError";
 
 const registerCitizen = async (payload: IRegisterCitizenPayload) => {
   const { name, password, phoneNumber } = payload;
@@ -456,7 +456,10 @@ const forgotPassword = async (payload: IForgotPasswordPayload) => {
   if (isUserExist.isDeleted) {
     throw new Error("User is deleted");
   }
-  if (isUserExist.googleId && isUserExist.authProvider === AuthProvider.GOOGLE) {
+  if (
+    isUserExist.googleId &&
+    isUserExist.authProvider === AuthProvider.GOOGLE
+  ) {
     throw new Error("User has account with google");
   }
 
@@ -510,7 +513,10 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
   if (isUserExist.isDeleted) {
     throw new Error("User is deleted");
   }
-  if (isUserExist.googleId && isUserExist.authProvider === AuthProvider.GOOGLE) {
+  if (
+    isUserExist.googleId &&
+    isUserExist.authProvider === AuthProvider.GOOGLE
+  ) {
     throw new Error("User has account with google");
   }
   const key = `forgot-password-otp:${isUserExist.email}`;
@@ -534,6 +540,7 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
     },
     data: {
       password: hashedNewPassword,
+      needPasswordChange: false,
     },
   });
 

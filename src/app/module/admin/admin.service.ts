@@ -1,5 +1,7 @@
+import bcrypt from "bcryptjs";
 import {
   AuditAction,
+  EntityName,
   RequestStatus,
   Role,
   UserStatus,
@@ -7,11 +9,17 @@ import {
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
 import { createAuditLog } from "../../utils/createAuditLog";
+import { generateRandomPassword } from "../../utils/generatePassword";
 import {
   IAdminDashboardStats,
   IAuditLogFilterables,
+  ICreateStaffInput,
   IUserFilterables,
 } from "./admin.interface";
+import path from "node:path";
+import ejs from "ejs";
+import { transporter } from "../../lib/notemailter";
+import config from "../../config";
 
 const getAllUsers = async (filters: IUserFilterables) => {
   const {
@@ -376,10 +384,114 @@ const getAllAuditLogs = async (filters: IAuditLogFilterables) => {
   };
 };
 
+const createStaff = async (payload: ICreateStaffInput, adminId: string) => {
+  const existingUser = await prisma.user.findUnique({
+    where: { email: payload.email },
+  });
+
+  if (existingUser) {
+    throw new AppError(400, "User with this email already exists.");
+  }
+
+  // Generate 8-character temporary password
+  const temporaryPassword = generateRandomPassword(8);
+  const hashedPassword = await bcrypt.hash(
+    temporaryPassword,
+    Number(config.bcrypt_salt_rounds) || 12,
+  );
+
+  // Create User, StaffProfile & Audit Log
+  const result = await prisma.$transaction(async (tx) => {
+    const newStaff = await tx.user.create({
+      data: {
+        name: payload.name,
+        email: payload.email,
+        password: hashedPassword,
+        phoneNumber: payload.phoneNumber,
+        role: Role.STAFF,
+        needPasswordChange: true,
+        staffProfile: {
+          create: {
+            department: payload.department,
+            designation: payload.designation,
+            qualification: payload.qualification,
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phoneNumber: true,
+        role: true,
+        emailVerified: true,
+        needPasswordChange: true,
+        createdAt: true,
+        staffProfile: {
+          select: {
+            id: true,
+            department: true,
+            designation: true,
+            qualification: true,
+            isAvailable: true,
+            joiningDate: true,
+          },
+        },
+      },
+    });
+
+    // Create Audit Log
+    await tx.auditLog.create({
+      data: {
+        action: AuditAction.CREATE_STAFF,
+        entityName: EntityName.STAFF,
+        entityId: newStaff.id,
+        performedById: adminId,
+        details: {
+          actionType: "CREATE_STAFF",
+          staffEmail: newStaff.email,
+          staffName: newStaff.name,
+          department: payload.department,
+          designation: payload.designation,
+          qualification: payload.qualification,
+        },
+      },
+    });
+
+    return newStaff;
+  });
+
+  // Send Welcome Email
+  try {
+    const templatePath = path.join(
+      process.cwd(),
+      "src/app/templates/staff-welcome.ejs",
+    );
+
+    const html = await ejs.renderFile(templatePath, {
+      name: payload.name,
+      email: payload.email,
+      temporaryPassword: temporaryPassword,
+    });
+
+    await transporter.sendMail({
+      from: `"City Services" <${config.email_sender}>`,
+      to: payload.email,
+      subject: "Welcome to City Services - Your Staff Account Credentials",
+      html,
+    });
+  } catch (error) {
+    console.error("Failed to send welcome email to staff:", error);
+  }
+
+  return result;
+};
+
 export const AdminService = {
   getAllUsers,
   updateUserStatus,
   updateUserRole,
   getAdminDashboardStats,
   getAllAuditLogs,
+  createStaff,
 };

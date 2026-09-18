@@ -84,10 +84,25 @@ const getAllAuditLogs = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const createStaff = catchAsync(async (req: Request, res: Response) => {
+  const adminId = req.user?.userId;
+  const payload = req.body;
+
+  const result = await AdminService.createStaff(payload, adminId as string);
+
+  sendResponse(res, {
+    statusCode: 201,
+    success: true,
+    message: "Staff account created successfully and welcome email sent",
+    data: result,
+  });
+});
+
 export const AdminController = {
   getAllUsers,
   updateUserStatus,
   updateUserRole,
   getAdminDashboardStats,
   getAllAuditLogs,
+  createStaff,
 };

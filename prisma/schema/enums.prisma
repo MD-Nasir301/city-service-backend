@@ -51,6 +51,14 @@ enum AuditAction {
   STATUS_CHANGE
   ASSIGNMENT
   ROLE_CHANGE
+  CREATE_STAFF
+}
+
+enum EntityName {
+  STAFF 
+  CITIZEN 
+  SERVICE 
+  DEPARTMENT 
 }
 
 enum Department {

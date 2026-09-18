@@ -4,6 +4,8 @@ import { Role } from "../../../generated/prisma/enums";
 import { AdminController } from "./admin.controller";
 import { validateRequest } from "../../middleware/validateRequest";
 import { AdminValidation } from "./admin.validation";
+import { UserController } from "../users/users.controller";
+import { UserValidation } from "../users/users.validation";
 
 const router = Router();
 
@@ -37,6 +39,13 @@ router.get(
   "/audit-logs",
   auth(Role.ADMIN, Role.SUPER_ADMIN),
   AdminController.getAllAuditLogs,
+);
+
+router.post(
+  "/create-staff",
+  auth(Role.ADMIN, Role.SUPER_ADMIN),
+  validateRequest(AdminValidation.createStaffZodSchema),
+  AdminController.createStaff,
 );
 
 export const AdminRoutes = router;
