@@ -1,0 +1,16 @@
+
+model StaffProfile {
+  id            String     @id @default(uuid())
+  userId        String     @unique
+  department    Department
+  designation   String?    
+  qualification String?    
+  isAvailable   Boolean    @default(true) 
+  joiningDate   DateTime   @default(now())
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("staff_profile")
+}

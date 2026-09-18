@@ -52,3 +52,11 @@ enum AuditAction {
   ASSIGNMENT
   ROLE_CHANGE
 }
+
+enum Department {
+  ROAD_REPAIR              
+  DRAINAGE_AND_SEWERAGE    
+  WASTE_MANAGEMENT         
+  PARK_AND_TREE_TRIMMING   
+  STREET_LIGHTING          
+}

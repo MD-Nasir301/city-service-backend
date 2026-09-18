@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "Department" AS ENUM ('ROAD_REPAIR', 'DRAINAGE_AND_SEWERAGE', 'WASTE_MANAGEMENT', 'PARK_AND_TREE_TRIMMING', 'STREET_LIGHTING');
+
+-- AlterTable
+ALTER TABLE "user" ADD COLUMN     "department" "Department";
