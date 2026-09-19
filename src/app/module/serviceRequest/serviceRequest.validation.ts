@@ -1,34 +1,62 @@
 import z from "zod";
 import { Priority, RequestStatus } from "../../../generated/prisma/enums";
 
-const CreateServiceRequestZodSchema = z.object({
-  categoryId: z.string({
-    message: "Category ID is required.",
-  }),
-  title: z
-    .string({
-      message: "Title must be a string.",
-    })
-    .min(5, { message: "Title must be at least 5 characters long." }),
-  description: z
-    .string({
-      message: "Description must be a string.",
-    })
-    .min(10, { message: "Description must be at least 10 characters long." }),
-  address: z.string({
-    message: "Address is required.",
-  }),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  images: z.array(z.string()).optional(),
-  priority: z
-    .enum([Priority.LOW, Priority.MEDIUM, Priority.HIGH, Priority.URGENT])
-    .optional(),
-  quantity: z
-    .number()
-    .min(1, { message: "Quantity must be at least 1." })
-    .optional(),
-});
+import { z } from "zod";
+
+export const CreateServiceRequestZodSchema = z
+  .object({
+    categoryId: z.string({
+      message: "Category ID is required.",
+    }),
+    title: z
+      .string({
+        message: "Title must be a string.",
+      })
+      .min(5, { message: "Title must be at least 5 characters long." }),
+    description: z
+      .string({
+        message: "Description must be a string.",
+      })
+      .min(10, { message: "Description must be at least 10 characters long." }),
+    address: z.string({
+      message: "Address is required.",
+    }),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+    images: z.array(z.string()).optional(),
+    priority: z
+      .enum([Priority.LOW, Priority.MEDIUM, Priority.HIGH, Priority.URGENT])
+      .optional(),
+    quantity: z
+      .number()
+      .min(1, { message: "Quantity must be at least 1." })
+      .optional(),
+
+    // 💡 নতুন যোগ করা অপশনাল শিডিউল ফিল্ডস
+    preferredStartDate: z
+      .string()
+      .datetime({ message: "Invalid preferred start date format." })
+      .optional(),
+    preferredEndDate: z
+      .string()
+      .datetime({ message: "Invalid preferred end date format." })
+      .optional(),
+  })
+
+  .refine(
+    (data) => {
+      if (data.preferredStartDate && data.preferredEndDate) {
+        return (
+          new Date(data.preferredEndDate) >= new Date(data.preferredStartDate)
+        );
+      }
+      return true;
+    },
+    {
+      message: "preferredEndDate must be equal to or after preferredStartDate.",
+      path: ["preferredEndDate"], 
+    },
+  );
 
 const AssignStaffZodSchema = z.object({
   assignedStaffId: z.string({
@@ -76,4 +104,3 @@ export const ServiceRequestValidation = {
   UpdateStatusZodSchema,
   UpdateServiceRequestZodSchema,
 };
-

@@ -1,4 +1,8 @@
-import { CategoryType, Priority, RequestStatus } from "../../../generated/prisma/enums";
+import {
+  CategoryType,
+  Priority,
+  RequestStatus,
+} from "../../../generated/prisma/enums";
 
 export interface ICreateServiceRequestInput {
   categoryId: string;
@@ -10,6 +14,8 @@ export interface ICreateServiceRequestInput {
   images?: string[];
   priority?: Priority;
   quantity?: number;
+  preferredStartDate?: string | Date;
+  preferredEndDate?: string | Date;
 }
 
 export interface IServiceRequestFilterParams {
@@ -28,7 +34,7 @@ export interface IMyServiceRequestFilterParams {
   search?: string;
   status?: RequestStatus;
   priority?: Priority;
-  type?: CategoryType; 
+  type?: CategoryType;
   page?: string;
   limit?: string;
 }
@@ -41,4 +47,3 @@ export interface IMyAssignedFilterParams {
   page?: string;
   limit?: string;
 }
-

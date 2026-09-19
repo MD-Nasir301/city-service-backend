@@ -17,11 +17,10 @@ import {
   IServiceRequestFilterParams,
 } from "./serviceRequest.interface";
 
-export const createServiceRequest = async (
+ const createServiceRequest = async (
   userId: string,
-  payload: ICreateServiceRequestInput
+  payload: ICreateServiceRequestInput,
 ) => {
-  
   const category = await prisma.category.findFirst({
     where: { id: payload.categoryId, isDeleted: false, isActive: true },
   });
@@ -29,7 +28,7 @@ export const createServiceRequest = async (
   if (!category) {
     throw new AppError(
       404,
-      "Selected service category was not found or is inactive."
+      "Selected service category was not found or is inactive.",
     );
   }
 
@@ -54,12 +53,18 @@ export const createServiceRequest = async (
         address: payload.address,
         latitude: payload.latitude,
         longitude: payload.longitude,
-        images: payload.images || [], 
+        images: payload.images || [],
         priority: payload.priority,
         quantity: quantity,
         totalAmount: calculatedAmount,
         isPaid: category.type === CategoryType.FREE,
         status: RequestStatus.PENDING,
+        preferredStartDate: payload.preferredStartDate
+          ? new Date(payload.preferredStartDate)
+          : undefined,
+        preferredEndDate: payload.preferredEndDate
+          ? new Date(payload.preferredEndDate)
+          : undefined,
       },
     });
 
@@ -74,6 +79,8 @@ export const createServiceRequest = async (
         categoryName: category.name,
         categoryType: category.type,
         totalAmount: calculatedAmount,
+        preferredStartDate: newRequest.preferredStartDate,
+        preferredEndDate: newRequest.preferredEndDate,
       },
     });
 
@@ -229,6 +236,9 @@ const getMyServiceRequests = async (
     include: {
       category: {
         select: { id: true, name: true, type: true },
+      },
+      payment: {
+        select: { id: true, amount: true, status: true },
       },
     },
   });
@@ -550,7 +560,7 @@ export const updateServiceRequest = async (
   payload: Partial<ICreateServiceRequestInput> & {
     images?: string[];
     imagePublicIds?: string[];
-  }
+  },
 ) => {
   const serviceRequest = await prisma.serviceRequest.findFirst({
     where: { id, isDeleted: false },
@@ -567,12 +577,15 @@ export const updateServiceRequest = async (
   if (serviceRequest.status !== RequestStatus.PENDING) {
     throw new AppError(
       400,
-      "Cannot update service request once processing has started."
+      "Cannot update service request once processing has started.",
     );
   }
 
   if (payload.imagePublicIds && payload.imagePublicIds.length > 0) {
-    if (serviceRequest.imagePublicIds && serviceRequest.imagePublicIds.length > 0) {
+    if (
+      serviceRequest.imagePublicIds &&
+      serviceRequest.imagePublicIds.length > 0
+    ) {
       for (const publicId of serviceRequest.imagePublicIds) {
         await deleteFromCloudinary(publicId);
       }

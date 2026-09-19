@@ -11,7 +11,8 @@
     "formate:check": "npx @biomejs/biome format ./src",
     "formate:fix": "npx @biomejs/biome format --write ./src",
     "lint:check": "npx @biomejs/biome lint ./src ",
-    "lint:fix": "npx @biomejs/biome lint --write ./src "
+    "lint:fix": "npx @biomejs/biome lint --write ./src ",
+    "stripe:webhook": "stripe listen --forward-to localhost:5000/api/payments/webhook"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +36,7 @@
     "nodemailer": "^10.0.1",
     "pg": "^8.22.0",
     "redis": "^6.2.1",
+    "stripe": "^22.6.2",
     "zod": "^4.5.4"
   },
   "devDependencies": {

@@ -34,4 +34,10 @@ export default {
   smtp_user: process.env.SMTP_USER,
   email_sender: process.env.EMAIL_SENDER,
   smtp_password: process.env.SMTP_PASSWORD,
-};
+
+  stripe_secret_key: process.env.STRIPE_SECRET_KEY,
+  stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
+  app_url: process.env.APP_URL,
+  client_app_url: process.env.CLIENT_APP_URL,
+  
+}

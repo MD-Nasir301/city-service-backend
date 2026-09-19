@@ -22,11 +22,13 @@ enum CategoryType {
 }
 
 enum RequestStatus {
-  PENDING
-  IN_PROGRESS
-  RESOLVED
-  CANCELLED
-  REJECTED
+  PENDING     
+  ASSIGNED    
+  ACCEPTED    
+  IN_PROGRESS 
+  RESOLVED    
+  CANCELLED   
+  REJECTED   
 }
 
 enum Priority {
@@ -37,11 +39,11 @@ enum Priority {
 }
 
 enum PaymentStatus {
-  PENDING
-  PAID
-  FAILED
-  CANCELLED
-  REFUNDED
+  PENDING  
+  PAID 
+  FAILED 
+  CANCELLED 
+  REFUNDED 
 }
 
 enum AuditAction {

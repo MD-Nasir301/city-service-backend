@@ -16,8 +16,11 @@ import { UserRoutes } from "./app/module/users/users.route";
 import { AdminRoutes } from "./app/module/admin/admin.route";
 import { CommentRoutes } from "./app/module/comment/comments.route";
 import { StaffRoutes } from "./app/module/staff/staff.route";
+import { PaymentController } from "./app/module/payment/payment.controller";
+import { PaymentRoutes } from "./app/module/payment/payment.route";
 
 const app: Application = express();
+
 
 app.use(
   cors({
@@ -26,6 +29,11 @@ app.use(
   }),
 );
 
+app.post(
+  "/api/v1/payments/webhook",
+  express.raw({ type: "application/json" }),
+  PaymentController.handleWebhook 
+);
 // Enable URL-encoded form data parsing
 app.use(express.urlencoded({ extended: true }));
 
@@ -40,6 +48,7 @@ app.use("/api/v1/users", UserRoutes);
 app.use("/api/v1/admin", AdminRoutes);
 app.use("/api/v1/staff", StaffRoutes);
 app.use("/api/v1/comment", CommentRoutes);
+app.use("/api/v1/payments", PaymentRoutes);
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {
