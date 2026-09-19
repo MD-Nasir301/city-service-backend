@@ -17,7 +17,7 @@ import {
   IServiceRequestFilterParams,
 } from "./serviceRequest.interface";
 
- const createServiceRequest = async (
+const createServiceRequest = async (
   userId: string,
   payload: ICreateServiceRequestInput,
 ) => {
@@ -406,7 +406,7 @@ const assignStaff = async (
       where: { id: serviceRequestId },
       data: {
         assignedStaffId: payload.assignedStaffId,
-        status: RequestStatus.IN_PROGRESS,
+        status: RequestStatus.ASSIGNED,
       },
     });
 
@@ -421,7 +421,7 @@ const assignStaff = async (
           assignedStaffId: payload.assignedStaffId,
           assignedStaffName: staff.name,
           previousStatus: serviceRequest.status,
-          newStatus: RequestStatus.IN_PROGRESS,
+          newStatus: RequestStatus.ASSIGNED,
         },
       });
     }
@@ -432,7 +432,7 @@ const assignStaff = async (
   return result;
 };
 
-const updateServiceRequestStatus = async (
+export const updateServiceRequestStatus = async (
   id: string,
   user: { userId: string; role: Role },
   payload: { status: RequestStatus },
@@ -455,7 +455,43 @@ const updateServiceRequestStatus = async (
     );
   }
 
-  // Transaction (Update Status + AuditLog + Staff Availability)
+  if (user.role === Role.STAFF) {
+    // Check A: ASSIGNED
+    if (serviceRequest.status === RequestStatus.ASSIGNED) {
+      if (
+        payload.status !== RequestStatus.ACCEPTED &&
+        payload.status !== RequestStatus.REJECTED
+      ) {
+        throw new AppError(
+          400,
+          "You can only ACCEPT or REJECT an assigned request.",
+        );
+      }
+    }
+    // Check B: ACCEPTED
+    if (serviceRequest.status === RequestStatus.ACCEPTED) {
+      if (
+        payload.status !== RequestStatus.IN_PROGRESS &&
+        payload.status !== RequestStatus.REJECTED
+      ) {
+        throw new AppError(
+          400,
+          "Request is already accepted. Next status must be IN_PROGRESS.",
+        );
+      }
+    }
+    // Check C: IN_PROGRESS
+    if (serviceRequest.status === RequestStatus.IN_PROGRESS) {
+      if (payload.status !== RequestStatus.RESOLVED) {
+        throw new AppError(
+          400,
+          "An in-progress request can only be marked as RESOLVED.",
+        );
+      }
+    }
+  }
+
+  // Transaction (Update Status + Staff Availability + Audit Log)
   const result = await prisma.$transaction(async (tx) => {
     const updatedRequest = await tx.serviceRequest.update({
       where: { id },
@@ -471,7 +507,6 @@ const updateServiceRequestStatus = async (
           data: { isAvailable: false },
         });
       }
-
       if (
         payload.status === RequestStatus.RESOLVED ||
         payload.status === RequestStatus.CANCELLED ||
@@ -493,6 +528,7 @@ const updateServiceRequestStatus = async (
         actionType: "UPDATE_SERVICE_STATUS",
         previousStatus: serviceRequest.status,
         newStatus: payload.status,
+        updatedByRole: user.role,
       },
     });
 

@@ -2,7 +2,7 @@
 import config from "../../config";
 import { stripe } from "../../lib/stripe";
 import { prisma } from "../../lib/prisma";
-import { PaymentStatus } from "../../../generated/prisma/enums";
+import { PaymentStatus, RequestStatus } from "../../../generated/prisma/enums";
 import AppError from "../../utils/appError";
 import Stripe from "stripe";
 
@@ -26,6 +26,12 @@ export const createCheckoutSession = async (
 
   if (serviceRequest.isPaid) {
     throw new AppError(400, "This service request has already been paid for.");
+  }
+  if (serviceRequest.status === RequestStatus.RESOLVED) {
+    throw new AppError(400, "This service request has already been resolved.");
+  }
+  if (serviceRequest.status !== RequestStatus.ACCEPTED) {
+    throw new AppError(400, "This service request is not accepted or ready for payment yet.");
   }
 
   const amount = serviceRequest.totalAmount;
