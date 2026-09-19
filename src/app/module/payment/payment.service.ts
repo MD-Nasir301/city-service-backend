@@ -5,6 +5,9 @@ import { prisma } from "../../lib/prisma";
 import { PaymentStatus, RequestStatus } from "../../../generated/prisma/enums";
 import AppError from "../../utils/appError";
 import Stripe from "stripe";
+import { transporter } from "../../lib/notemailter";
+import path from "path/win32";
+import ejs from "ejs";
 
 export const createCheckoutSession = async (
   userId: string,
@@ -86,38 +89,102 @@ export const createCheckoutSession = async (
 };
 
 
-
-
 // Webhook 
 export const handleStripeWebhook = async (event: Stripe.Event) => {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 
     const serviceRequestId = session.metadata?.serviceRequestId;
+    const userId = session.metadata?.userId;
     const transactionId = session.id;
 
     if (!serviceRequestId) return;
 
-    // Prisma Transaction 
-    await prisma.$transaction(async (tx) => {
-      await tx.payment.update({
-        where: { transactionId },
-        data: {
-          status: PaymentStatus.PAID,
-          paymentMethod: session.payment_method_types[0] || "card",
-        },
+    // Database Transaction
+    const { updatedPayment, serviceRequest, user } = await prisma.$transaction(
+      async (tx) => {
+        const updatedPayment = await tx.payment.update({
+          where: { transactionId },
+          data: {
+            status: PaymentStatus.PAID,
+            paymentMethod: session.payment_method_types[0] || "card",
+          },
+        });
+
+        const serviceRequest = await tx.serviceRequest.update({
+          where: { id: serviceRequestId },
+          data: { isPaid: true },
+        });
+
+        const user = await tx.user.findUnique({
+          where: { id: userId },
+        });
+
+        return { updatedPayment, serviceRequest, user };
+      }
+    );
+
+    // Success Email
+    if (user?.email) {
+      const templatePath = path.join(
+        process.cwd(),
+        "src/app/templates/payment-success.ejs"
+      );
+
+      const html = await ejs.renderFile(templatePath, {
+        name: user.name,
+        serviceTitle: serviceRequest.title,
+        amount: updatedPayment.amount,
+        transactionId: updatedPayment.transactionId,
       });
 
-      await tx.serviceRequest.update({
-        where: { id: serviceRequestId },
-        data: {
-          isPaid: true,
-        },
+      await transporter.sendMail({
+        from: `"City Services" <${config.email_sender}>`,
+        to: user.email,
+        subject: "Payment Confirmation - City Services",
+        html,
       });
+    }
+  }
+
+  if (event.type === "checkout.session.async_payment_failed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const serviceRequestId = session.metadata?.serviceRequestId;
+    const userId = session.metadata?.userId;
+    const transactionId = session.id;
+
+    if (!serviceRequestId) return;
+
+    await prisma.payment.update({
+      where: { transactionId },
+      data: { status: PaymentStatus.FAILED },
     });
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const serviceRequest = await prisma.serviceRequest.findUnique({
+      where: { id: serviceRequestId },
+    });
+
+    if (user?.email) {
+      const templatePath = path.join(
+        process.cwd(),
+        "src/app/templates/payment-failed.ejs"
+      );
+
+      const html = await ejs.renderFile(templatePath, {
+        name: user.name,
+        serviceTitle: serviceRequest?.title || "Service",
+      });
+
+      await transporter.sendMail({
+        from: `"City Services" <${config.email_sender}>`,
+        to: user.email,
+        subject: "Payment Failed - City Services",
+        html,
+      });
+    }
   }
 };
-
 
 export const PaymentService = {
     createCheckoutSession,

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+    .card { background: #fff; padding: 20px; border-radius: 8px; max-width: 500px; margin: auto; }
+    .header { color: #2e7d32; }
+    .details { margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2 class="header">Payment Successful!</h2>
+    <p>Hello <%= name %>,</p>
+    <p>Thank you for your payment. Your service request is now confirmed.</p>
+    
+    <div class="details">
+      <p><strong>Service:</strong> <%= serviceTitle %></p>
+      <p><strong>Amount Paid:</strong> BDT <%= amount %></p>
+      <p><strong>Transaction ID:</strong> <%= transactionId %></p>
+    </div>
+    
+    <p style="margin-top:20px;">Best regards,<br>City Services Team</p>
+  </div>
+</body>
+</html>

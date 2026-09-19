@@ -1,8 +1,6 @@
 import z from "zod";
 import { Priority, RequestStatus } from "../../../generated/prisma/enums";
 
-import { z } from "zod";
-
 export const CreateServiceRequestZodSchema = z
   .object({
     categoryId: z.string({
@@ -32,7 +30,6 @@ export const CreateServiceRequestZodSchema = z
       .min(1, { message: "Quantity must be at least 1." })
       .optional(),
 
-    // 💡 নতুন যোগ করা অপশনাল শিডিউল ফিল্ডস
     preferredStartDate: z
       .string()
       .datetime({ message: "Invalid preferred start date format." })
@@ -72,6 +69,7 @@ const UpdateStatusZodSchema = z.object({
       RequestStatus.RESOLVED,
       RequestStatus.CANCELLED,
       RequestStatus.REJECTED,
+      RequestStatus.ACCEPTED,
     ],
     {
       message: "Valid request status is required.",
