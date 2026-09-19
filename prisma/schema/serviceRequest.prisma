@@ -13,6 +13,8 @@ model ServiceRequest {
   isDeleted       Boolean       @default(false)
   status          RequestStatus @default(PENDING)
   priority        Priority      @default(MEDIUM)
+  preferredStartDate DateTime?
+  preferredEndDate   DateTime?
   citizenId       String
   categoryId      String
   assignedStaffId String?

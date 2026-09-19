@@ -445,15 +445,6 @@ const updateServiceRequestStatus = async (
     );
   }
 
-  // Transaction (Update Status + AuditLog)
-  // const result = await prisma.$transaction(async (tx) => {
-  //   const updatedRequest = await tx.serviceRequest.update({
-  //     where: { id },
-  //     data: {
-  //       status: payload.status,
-  //     },
-  //   });
-
   // Transaction (Update Status + AuditLog + Staff Availability)
   const result = await prisma.$transaction(async (tx) => {
     const updatedRequest = await tx.serviceRequest.update({
