@@ -446,6 +446,15 @@ const updateServiceRequestStatus = async (
   }
 
   // Transaction (Update Status + AuditLog)
+  // const result = await prisma.$transaction(async (tx) => {
+  //   const updatedRequest = await tx.serviceRequest.update({
+  //     where: { id },
+  //     data: {
+  //       status: payload.status,
+  //     },
+  //   });
+
+  // Transaction (Update Status + AuditLog + Staff Availability)
   const result = await prisma.$transaction(async (tx) => {
     const updatedRequest = await tx.serviceRequest.update({
       where: { id },
@@ -453,6 +462,26 @@ const updateServiceRequestStatus = async (
         status: payload.status,
       },
     });
+
+    if (updatedRequest.assignedStaffId) {
+      if (payload.status === RequestStatus.IN_PROGRESS) {
+        await tx.staffProfile.update({
+          where: { userId: updatedRequest.assignedStaffId },
+          data: { isAvailable: false },
+        });
+      }
+
+      if (
+        payload.status === RequestStatus.RESOLVED ||
+        payload.status === RequestStatus.CANCELLED ||
+        payload.status === RequestStatus.REJECTED
+      ) {
+        await tx.staffProfile.update({
+          where: { userId: updatedRequest.assignedStaffId },
+          data: { isAvailable: true },
+        });
+      }
+    }
 
     await createAuditLog(tx, {
       action: AuditAction.STATUS_CHANGE,
