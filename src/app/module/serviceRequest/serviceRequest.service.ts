@@ -403,7 +403,7 @@ const assignStaff = async (
     if (adminId) {
       await createAuditLog(tx, {
         action: AuditAction.ASSIGNMENT,
-        entityName: "ServiceRequest",
+        entityName: EntityName.STAFF,
         entityId: updatedRequest.id,
         performedById: adminId,
         details: {
@@ -456,11 +456,11 @@ const updateServiceRequestStatus = async (
 
     await createAuditLog(tx, {
       action: AuditAction.STATUS_CHANGE,
-      entityName: "ServiceRequest",
+      entityName: EntityName.SERVICE,
       entityId: updatedRequest.id,
       performedById: user.userId,
       details: {
-        actionType: "UPDATE_STATUS",
+        actionType: "UPDATE_SERVICE_STATUS",
         previousStatus: serviceRequest.status,
         newStatus: payload.status,
       },
@@ -508,7 +508,7 @@ const deleteServiceRequest = async (
 
     await createAuditLog(tx, {
       action: AuditAction.DELETE,
-      entityName: "ServiceRequest",
+      entityName: EntityName.SERVICE,
       entityId: deletedRequest.id,
       performedById: user.userId,
       details: {
@@ -567,7 +567,7 @@ export const updateServiceRequest = async (
 
     await createAuditLog(tx, {
       action: AuditAction.UPDATE,
-      entityName: "ServiceRequest",
+      entityName: EntityName.SERVICE,
       entityId: updated.id,
       performedById: userId,
       details: {

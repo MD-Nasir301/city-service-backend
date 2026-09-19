@@ -59,6 +59,8 @@ enum EntityName {
   CITIZEN
   SERVICE
   DEPARTMENT
+  USER
+  CATEGORY
 }
 
 enum Department {

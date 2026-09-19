@@ -142,7 +142,7 @@ const updateUserStatus = async (
 
     await createAuditLog(tx, {
       action: AuditAction.STATUS_CHANGE,
-      entityName: "User",
+      entityName: EntityName.USER,
       entityId: updatedUser.id,
       performedById: adminId,
       details: {
@@ -441,20 +441,18 @@ const createStaff = async (payload: ICreateStaffInput, adminId: string) => {
     });
 
     // Create Audit Log
-    await tx.auditLog.create({
-      data: {
-        action: AuditAction.CREATE_STAFF,
-        entityName: EntityName.STAFF,
-        entityId: newStaff.id,
-        performedById: adminId,
-        details: {
-          actionType: "CREATE_STAFF",
-          staffEmail: newStaff.email,
-          staffName: newStaff.name,
-          department: payload.department,
-          designation: payload.designation,
-          qualification: payload.qualification,
-        },
+    await createAuditLog(tx, {
+      action: AuditAction.CREATE_STAFF,
+      entityName: EntityName.STAFF,
+      entityId: newStaff.id,
+      performedById: adminId,
+      details: {
+        actionType: "CREATE_STAFF",
+        staffEmail: newStaff.email,
+        staffName: newStaff.name,
+        department: payload.department,
+        designation: payload.designation,
+        qualification: payload.qualification,
       },
     });
 

@@ -1,4 +1,4 @@
-import { AuditAction, Prisma } from "../../../generated/prisma/client";
+import { AuditAction, EntityName, Prisma } from "../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
 import { createAuditLog } from "../../utils/createAuditLog";
@@ -135,7 +135,7 @@ const updateCategory = async (
     if (adminId) {
       await createAuditLog(tx, {
         action: AuditAction.UPDATE,
-        entityName: "Category",
+        entityName: EntityName.CATEGORY,
         entityId: updatedCategory.id,
         performedById: adminId,
         details: { oldData: category, newData: updatedCategory },
@@ -170,7 +170,7 @@ const deleteCategory = async (id: string, adminId?: string) => {
     if (adminId) {
       await createAuditLog(tx, {
         action: AuditAction.DELETE,
-        entityName: "Category",
+        entityName: EntityName.CATEGORY,
         entityId: deletedCategory.id,
         performedById: adminId,
         details: { name: deletedCategory.name },
