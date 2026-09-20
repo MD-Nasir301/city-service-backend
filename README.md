@@ -221,10 +221,13 @@ Below is a simplified summary of the main route modules used in the project.
 
 ### 8. Payments Module
 
-| Method | Endpoint                                   | Description                   |
+| Method | Endpoint | Description |
 | ------ | ------------------------------------------ | ----------------------------- |
-| POST   | `/api/v1/payments/create-checkout-session` | Create Stripe payment session |
-| POST   | `/api/v1/payments/webhook`                 | Handle Stripe webhook updates |
+| POST   | `/api/v1/payments/create-checkout-session` | Create Stripe payment session[cite: 5] |
+| POST   | `/api/v1/payments/webhook`                 | Handle Stripe webhook updates[cite: 5] |
+| GET    | `/api/v1/payments/my-payments`             | Get payment history for logged-in user |
+| GET    | `/api/v1/payments/:id`                     | Get specific payment details by ID |
+| GET    | `/api/v1/payments`                         | Get all payments (Admin/Super Admin only) |
 
 ---
 
