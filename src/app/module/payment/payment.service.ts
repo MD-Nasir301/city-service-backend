@@ -1,4 +1,3 @@
-
 import config from "../../config";
 import { stripe } from "../../lib/stripe";
 import { prisma } from "../../lib/prisma";
@@ -9,11 +8,10 @@ import { transporter } from "../../lib/notemailter";
 import path from "path/win32";
 import ejs from "ejs";
 
-export const createCheckoutSession = async (
+const createCheckoutSession = async (
   userId: string,
   serviceRequestId: string,
 ) => {
- 
   const serviceRequest = await prisma.serviceRequest.findUnique({
     where: { id: serviceRequestId },
     include: { category: true },
@@ -34,12 +32,18 @@ export const createCheckoutSession = async (
     throw new AppError(400, "This service request has already been resolved.");
   }
   if (serviceRequest.status !== RequestStatus.ACCEPTED) {
-    throw new AppError(400, "This service request is not accepted or ready for payment yet.");
+    throw new AppError(
+      400,
+      "This service request is not accepted or ready for payment yet.",
+    );
   }
 
   const amount = serviceRequest.totalAmount;
   if (!amount || amount <= 0) {
-    throw new AppError(400, "This service is free! or  Invalid service amount for payment.");
+    throw new AppError(
+      400,
+      "This service is free! or  Invalid service amount for payment.",
+    );
   }
 
   const session = await stripe.checkout.sessions.create({
@@ -53,7 +57,7 @@ export const createCheckoutSession = async (
             name: serviceRequest.title,
             description: `Category: ${serviceRequest.category.name}`,
           },
-          unit_amount: Math.round(amount * 100), 
+          unit_amount: Math.round(amount * 100),
         },
         quantity: 1,
       },
@@ -71,14 +75,14 @@ export const createCheckoutSession = async (
     where: { serviceRequestId: serviceRequest.id },
     update: {
       amount,
-      transactionId: session.id, 
+      transactionId: session.id,
       status: PaymentStatus.PENDING,
     },
     create: {
       userId,
       serviceRequestId: serviceRequest.id,
       amount,
-      transactionId: session.id, 
+      transactionId: session.id,
       status: PaymentStatus.PENDING,
     },
   });
@@ -88,9 +92,8 @@ export const createCheckoutSession = async (
   };
 };
 
-
-// Webhook 
-export const handleStripeWebhook = async (event: Stripe.Event) => {
+// Webhook
+const handleStripeWebhook = async (event: Stripe.Event) => {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 
@@ -121,14 +124,14 @@ export const handleStripeWebhook = async (event: Stripe.Event) => {
         });
 
         return { updatedPayment, serviceRequest, user };
-      }
+      },
     );
 
     // Success Email
     if (user?.email) {
       const templatePath = path.join(
         process.cwd(),
-        "src/app/templates/payment-success.ejs"
+        "src/app/templates/payment-success.ejs",
       );
 
       const html = await ejs.renderFile(templatePath, {
@@ -168,7 +171,7 @@ export const handleStripeWebhook = async (event: Stripe.Event) => {
     if (user?.email) {
       const templatePath = path.join(
         process.cwd(),
-        "src/app/templates/payment-failed.ejs"
+        "src/app/templates/payment-failed.ejs",
       );
 
       const html = await ejs.renderFile(templatePath, {
@@ -186,7 +189,64 @@ export const handleStripeWebhook = async (event: Stripe.Event) => {
   }
 };
 
+const getMyPayments = async (userId: string) => {
+  const payments = await prisma.payment.findMany({
+    where: { userId },
+    include: {
+      serviceRequest: {
+        select: {
+          id: true,
+          title: true,
+          category: { select: { name: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return payments;
+};
+
+export const getPaymentById = async (
+  paymentId: string,
+  userId: string,
+  role: string
+) => {
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: {
+      serviceRequest: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  if (!payment) {
+    throw new AppError(404, "Payment record not found.");
+  }
+
+  if (role === "CITIZEN" && payment.userId !== userId) {
+    throw new AppError(403, "You do not have permission to view this payment.");
+  }
+
+  if (role === "STAFF" && payment.serviceRequest.assignedStaffId !== userId) {
+    throw new AppError(
+      403,
+      "You can only view payment details for service requests assigned to you."
+    );
+  }
+
+  return payment;
+};
+
 export const PaymentService = {
-    createCheckoutSession,
-    handleStripeWebhook
-} 
+  createCheckoutSession,
+  handleStripeWebhook,
+  getMyPayments,
+  getPaymentById
+};

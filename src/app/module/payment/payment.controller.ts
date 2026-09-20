@@ -24,8 +24,7 @@ export const createCheckoutSession = catchAsync(
   },
 );
 
-
-// Stripe Webhook 
+// Stripe Webhook
 export const handleWebhook = catchAsync(async (req: Request, res: Response) => {
   const signature = req.headers["stripe-signature"] as string;
 
@@ -34,7 +33,7 @@ export const handleWebhook = catchAsync(async (req: Request, res: Response) => {
     event = stripe.webhooks.constructEvent(
       req.body,
       signature,
-      config.stripe_webhook_secret as string
+      config.stripe_webhook_secret as string,
     );
   } catch (err: any) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -45,8 +44,40 @@ export const handleWebhook = catchAsync(async (req: Request, res: Response) => {
   res.status(200).json({ received: true });
 });
 
+const getMyPayments = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId as string;
+  const result = await PaymentService.getMyPayments(userId);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Payment history retrieved successfully",
+    data: result,
+  });
+});
+
+const getPaymentById = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const userId = req.user?.userId as string;
+  const role = req.user?.role as string;
+
+  const result = await PaymentService.getPaymentById(
+    id as string,
+    userId,
+    role,
+  );
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Payment details retrieved successfully",
+    data: result,
+  });
+});
 
 export const PaymentController = {
   createCheckoutSession,
   handleWebhook,
+  getMyPayments,
+  getPaymentById,
 };
