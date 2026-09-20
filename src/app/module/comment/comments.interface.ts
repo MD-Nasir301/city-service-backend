@@ -1,12 +1,10 @@
-
-
 export interface ICreateCommentInput {
-  serviceRequestId: string;
-  text: string;
-  isInternal?: boolean;
+	serviceRequestId: string;
+	text: string;
+	isInternal?: boolean;
 }
 
 export interface IUpdateCommentInput {
-  text?: string;
-  isInternal?: boolean;
+	text?: string;
+	isInternal?: boolean;
 }

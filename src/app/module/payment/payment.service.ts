@@ -1,311 +1,311 @@
-import config from "../../config";
-import { stripe } from "../../lib/stripe";
-import { prisma } from "../../lib/prisma";
-import { PaymentStatus, RequestStatus } from "../../../generated/prisma/enums";
-import AppError from "../../utils/appError";
-import Stripe from "stripe";
-import { transporter } from "../../lib/notemailter";
-import path from "path/win32";
+import path from "node:path/win32";
 import ejs from "ejs";
-import { IPaymentQuery } from "./payment.interface";
+import type Stripe from "stripe";
+import { PaymentStatus, RequestStatus } from "../../../generated/prisma/enums";
+import config from "../../config";
+import { transporter } from "../../lib/notemailter";
+import { prisma } from "../../lib/prisma";
+import { stripe } from "../../lib/stripe";
+import AppError from "../../utils/appError";
+import type { IPaymentQuery } from "./payment.interface";
 
 const createCheckoutSession = async (
-  userId: string,
-  serviceRequestId: string,
+	userId: string,
+	serviceRequestId: string,
 ) => {
-  const serviceRequest = await prisma.serviceRequest.findUnique({
-    where: { id: serviceRequestId },
-    include: { category: true },
-  });
+	const serviceRequest = await prisma.serviceRequest.findUnique({
+		where: { id: serviceRequestId },
+		include: { category: true },
+	});
 
-  if (!serviceRequest) {
-    throw new AppError(404, "Service request not found.");
-  }
+	if (!serviceRequest) {
+		throw new AppError(404, "Service request not found.");
+	}
 
-  if (serviceRequest.citizenId !== userId) {
-    throw new AppError(403, "You can only pay for your own service request.");
-  }
+	if (serviceRequest.citizenId !== userId) {
+		throw new AppError(403, "You can only pay for your own service request.");
+	}
 
-  if (serviceRequest.isPaid) {
-    throw new AppError(400, "This service request has already been paid for.");
-  }
-  if (serviceRequest.status === RequestStatus.RESOLVED) {
-    throw new AppError(400, "This service request has already been resolved.");
-  }
-  if (serviceRequest.status !== RequestStatus.ACCEPTED) {
-    throw new AppError(
-      400,
-      "This service request is not accepted or ready for payment yet.",
-    );
-  }
+	if (serviceRequest.isPaid) {
+		throw new AppError(400, "This service request has already been paid for.");
+	}
+	if (serviceRequest.status === RequestStatus.RESOLVED) {
+		throw new AppError(400, "This service request has already been resolved.");
+	}
+	if (serviceRequest.status !== RequestStatus.ACCEPTED) {
+		throw new AppError(
+			400,
+			"This service request is not accepted or ready for payment yet.",
+		);
+	}
 
-  const amount = serviceRequest.totalAmount;
-  if (!amount || amount <= 0) {
-    throw new AppError(
-      400,
-      "This service is free! or  Invalid service amount for payment.",
-    );
-  }
+	const amount = serviceRequest.totalAmount;
+	if (!amount || amount <= 0) {
+		throw new AppError(
+			400,
+			"This service is free! or  Invalid service amount for payment.",
+		);
+	}
 
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    mode: "payment",
-    line_items: [
-      {
-        price_data: {
-          currency: "bdt",
-          product_data: {
-            name: serviceRequest.title,
-            description: `Category: ${serviceRequest.category.name}`,
-          },
-          unit_amount: Math.round(amount * 100),
-        },
-        quantity: 1,
-      },
-    ],
+	const session = await stripe.checkout.sessions.create({
+		payment_method_types: ["card"],
+		mode: "payment",
+		line_items: [
+			{
+				price_data: {
+					currency: "bdt",
+					product_data: {
+						name: serviceRequest.title,
+						description: `Category: ${serviceRequest.category.name}`,
+					},
+					unit_amount: Math.round(amount * 100),
+				},
+				quantity: 1,
+			},
+		],
 
-    success_url: `${config.frontend_url}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${config.frontend_url}/payments/cancel`,
-    metadata: {
-      serviceRequestId: serviceRequest.id,
-      userId: userId,
-    },
-  });
+		success_url: `${config.frontend_url}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+		cancel_url: `${config.frontend_url}/payments/cancel`,
+		metadata: {
+			serviceRequestId: serviceRequest.id,
+			userId: userId,
+		},
+	});
 
-  await prisma.payment.upsert({
-    where: { serviceRequestId: serviceRequest.id },
-    update: {
-      amount,
-      transactionId: session.id,
-      status: PaymentStatus.PENDING,
-    },
-    create: {
-      userId,
-      serviceRequestId: serviceRequest.id,
-      amount,
-      transactionId: session.id,
-      status: PaymentStatus.PENDING,
-    },
-  });
+	await prisma.payment.upsert({
+		where: { serviceRequestId: serviceRequest.id },
+		update: {
+			amount,
+			transactionId: session.id,
+			status: PaymentStatus.PENDING,
+		},
+		create: {
+			userId,
+			serviceRequestId: serviceRequest.id,
+			amount,
+			transactionId: session.id,
+			status: PaymentStatus.PENDING,
+		},
+	});
 
-  return {
-    paymentUrl: session.url,
-  };
+	return {
+		paymentUrl: session.url,
+	};
 };
 
 // Webhook
 const handleStripeWebhook = async (event: Stripe.Event) => {
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
+	if (event.type === "checkout.session.completed") {
+		const session = event.data.object as Stripe.Checkout.Session;
 
-    const serviceRequestId = session.metadata?.serviceRequestId;
-    const userId = session.metadata?.userId;
-    const transactionId = session.id;
+		const serviceRequestId = session.metadata?.serviceRequestId;
+		const userId = session.metadata?.userId;
+		const transactionId = session.id;
 
-    if (!serviceRequestId) return;
+		if (!serviceRequestId) return;
 
-    // Database Transaction
-    const { updatedPayment, serviceRequest, user } = await prisma.$transaction(
-      async (tx) => {
-        const updatedPayment = await tx.payment.update({
-          where: { transactionId },
-          data: {
-            status: PaymentStatus.PAID,
-            paymentMethod: session.payment_method_types[0] || "card",
-          },
-        });
+		// Database Transaction
+		const { updatedPayment, serviceRequest, user } = await prisma.$transaction(
+			async (tx) => {
+				const updatedPayment = await tx.payment.update({
+					where: { transactionId },
+					data: {
+						status: PaymentStatus.PAID,
+						paymentMethod: session.payment_method_types[0] || "card",
+					},
+				});
 
-        const serviceRequest = await tx.serviceRequest.update({
-          where: { id: serviceRequestId },
-          data: { isPaid: true },
-        });
+				const serviceRequest = await tx.serviceRequest.update({
+					where: { id: serviceRequestId },
+					data: { isPaid: true },
+				});
 
-        const user = await tx.user.findUnique({
-          where: { id: userId },
-        });
+				const user = await tx.user.findUnique({
+					where: { id: userId },
+				});
 
-        return { updatedPayment, serviceRequest, user };
-      },
-    );
+				return { updatedPayment, serviceRequest, user };
+			},
+		);
 
-    // Success Email
-    if (user?.email) {
-      const templatePath = path.join(
-        process.cwd(),
-        "src/app/templates/payment-success.ejs",
-      );
+		// Success Email
+		if (user?.email) {
+			const templatePath = path.join(
+				process.cwd(),
+				"src/app/templates/payment-success.ejs",
+			);
 
-      const html = await ejs.renderFile(templatePath, {
-        name: user.name,
-        serviceTitle: serviceRequest.title,
-        amount: updatedPayment.amount,
-        transactionId: updatedPayment.transactionId,
-      });
+			const html = await ejs.renderFile(templatePath, {
+				name: user.name,
+				serviceTitle: serviceRequest.title,
+				amount: updatedPayment.amount,
+				transactionId: updatedPayment.transactionId,
+			});
 
-      await transporter.sendMail({
-        from: `"City Services" <${config.email_sender}>`,
-        to: user.email,
-        subject: "Payment Confirmation - City Services",
-        html,
-      });
-    }
-  }
+			await transporter.sendMail({
+				from: `"City Services" <${config.email_sender}>`,
+				to: user.email,
+				subject: "Payment Confirmation - City Services",
+				html,
+			});
+		}
+	}
 
-  if (event.type === "checkout.session.async_payment_failed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const serviceRequestId = session.metadata?.serviceRequestId;
-    const userId = session.metadata?.userId;
-    const transactionId = session.id;
+	if (event.type === "checkout.session.async_payment_failed") {
+		const session = event.data.object as Stripe.Checkout.Session;
+		const serviceRequestId = session.metadata?.serviceRequestId;
+		const userId = session.metadata?.userId;
+		const transactionId = session.id;
 
-    if (!serviceRequestId) return;
+		if (!serviceRequestId) return;
 
-    await prisma.payment.update({
-      where: { transactionId },
-      data: { status: PaymentStatus.FAILED },
-    });
+		await prisma.payment.update({
+			where: { transactionId },
+			data: { status: PaymentStatus.FAILED },
+		});
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    const serviceRequest = await prisma.serviceRequest.findUnique({
-      where: { id: serviceRequestId },
-    });
+		const user = await prisma.user.findUnique({ where: { id: userId } });
+		const serviceRequest = await prisma.serviceRequest.findUnique({
+			where: { id: serviceRequestId },
+		});
 
-    if (user?.email) {
-      const templatePath = path.join(
-        process.cwd(),
-        "src/app/templates/payment-failed.ejs",
-      );
+		if (user?.email) {
+			const templatePath = path.join(
+				process.cwd(),
+				"src/app/templates/payment-failed.ejs",
+			);
 
-      const html = await ejs.renderFile(templatePath, {
-        name: user.name,
-        serviceTitle: serviceRequest?.title || "Service",
-      });
+			const html = await ejs.renderFile(templatePath, {
+				name: user.name,
+				serviceTitle: serviceRequest?.title || "Service",
+			});
 
-      await transporter.sendMail({
-        from: `"City Services" <${config.email_sender}>`,
-        to: user.email,
-        subject: "Payment Failed - City Services",
-        html,
-      });
-    }
-  }
+			await transporter.sendMail({
+				from: `"City Services" <${config.email_sender}>`,
+				to: user.email,
+				subject: "Payment Failed - City Services",
+				html,
+			});
+		}
+	}
 };
 
 const getMyPayments = async (userId: string) => {
-  const payments = await prisma.payment.findMany({
-    where: { userId },
-    include: {
-      serviceRequest: {
-        select: {
-          id: true,
-          title: true,
-          category: { select: { name: true } },
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+	const payments = await prisma.payment.findMany({
+		where: { userId },
+		include: {
+			serviceRequest: {
+				select: {
+					id: true,
+					title: true,
+					category: { select: { name: true } },
+				},
+			},
+		},
+		orderBy: { createdAt: "desc" },
+	});
 
-  return payments;
+	return payments;
 };
 
-export const getPaymentById = async (
-  paymentId: string,
-  userId: string,
-  role: string,
+const getPaymentById = async (
+	paymentId: string,
+	userId: string,
+	role: string,
 ) => {
-  const payment = await prisma.payment.findUnique({
-    where: { id: paymentId },
-    include: {
-      serviceRequest: true,
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-    },
-  });
+	const payment = await prisma.payment.findUnique({
+		where: { id: paymentId },
+		include: {
+			serviceRequest: true,
+			user: {
+				select: {
+					id: true,
+					name: true,
+					email: true,
+				},
+			},
+		},
+	});
 
-  if (!payment) {
-    throw new AppError(404, "Payment record not found.");
-  }
+	if (!payment) {
+		throw new AppError(404, "Payment record not found.");
+	}
 
-  if (role === "CITIZEN" && payment.userId !== userId) {
-    throw new AppError(403, "You do not have permission to view this payment.");
-  }
+	if (role === "CITIZEN" && payment.userId !== userId) {
+		throw new AppError(403, "You do not have permission to view this payment.");
+	}
 
-  if (role === "STAFF" && payment.serviceRequest.assignedStaffId !== userId) {
-    throw new AppError(
-      403,
-      "You can only view payment details for service requests assigned to you.",
-    );
-  }
+	if (role === "STAFF" && payment.serviceRequest.assignedStaffId !== userId) {
+		throw new AppError(
+			403,
+			"You can only view payment details for service requests assigned to you.",
+		);
+	}
 
-  return payment;
+	return payment;
 };
 
 const getAllPayments = async (query: IPaymentQuery) => {
-  const { page = 1, limit = 10, status, search } = query;
+	const { page = 1, limit = 10, status, search } = query;
 
-  const pageNumber = Number(page);
-  const limitNumber = Number(limit);
-  const skip = (pageNumber - 1) * limitNumber;
+	const pageNumber = Number(page);
+	const limitNumber = Number(limit);
+	const skip = (pageNumber - 1) * limitNumber;
 
-  const whereConditions: any = {};
+	const whereConditions: any = {};
 
-  if (status) {
-    whereConditions.status = status;
-  }
+	if (status) {
+		whereConditions.status = status;
+	}
 
-  if (search) {
-    whereConditions.OR = [
-      { transactionId: { contains: search, mode: "insensitive" } },
-      { user: { name: { contains: search, mode: "insensitive" } } },
-      { user: { email: { contains: search, mode: "insensitive" } } },
-    ];
-  }
+	if (search) {
+		whereConditions.OR = [
+			{ transactionId: { contains: search, mode: "insensitive" } },
+			{ user: { name: { contains: search, mode: "insensitive" } } },
+			{ user: { email: { contains: search, mode: "insensitive" } } },
+		];
+	}
 
-  const [payments, total] = await Promise.all([
-    prisma.payment.findMany({
-      where: whereConditions,
-      skip,
-      take: limitNumber,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        serviceRequest: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.payment.count({ where: whereConditions }),
-  ]);
+	const [payments, total] = await Promise.all([
+		prisma.payment.findMany({
+			where: whereConditions,
+			skip,
+			take: limitNumber,
+			include: {
+				user: {
+					select: {
+						id: true,
+						name: true,
+						email: true,
+					},
+				},
+				serviceRequest: {
+					select: {
+						id: true,
+						title: true,
+					},
+				},
+			},
+			orderBy: { createdAt: "desc" },
+		}),
+		prisma.payment.count({ where: whereConditions }),
+	]);
 
-  return {
-    meta: {
-      page: pageNumber,
-      limit: limitNumber,
-      total,
-      totalPages: Math.ceil(total / limitNumber),
-    },
-    data: payments,
-  };
+	return {
+		meta: {
+			page: pageNumber,
+			limit: limitNumber,
+			total,
+			totalPages: Math.ceil(total / limitNumber),
+		},
+		data: payments,
+	};
 };
 
 export const PaymentService = {
-  createCheckoutSession,
-  handleStripeWebhook,
-  getMyPayments,
-  getPaymentById,
-  getAllPayments,
+	createCheckoutSession,
+	handleStripeWebhook,
+	getMyPayments,
+	getPaymentById,
+	getAllPayments,
 };

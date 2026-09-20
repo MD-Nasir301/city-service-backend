@@ -1,8 +1,8 @@
-import { CategoryType } from "../../../generated/prisma/enums";
+import type { CategoryType } from "../../../generated/prisma/enums";
 
 export interface ICategoryFilterRequest {
-  search?: string;
-  type?: CategoryType
-  page?: number;
-  limit?: number;
+	search?: string;
+	type?: CategoryType;
+	page?: number;
+	limit?: number;
 }

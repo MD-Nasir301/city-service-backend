@@ -9,19 +9,31 @@ import httpStatus from "http-status";
 import config from "./app/config";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
+import { AdminRoutes } from "./app/module/admin/admin.route";
 import { AuthRoutes } from "./app/module/auth/auth.route";
 import { CategoryRoutes } from "./app/module/category/category.route";
-import { ServiceRequestRoutes } from "./app/module/serviceRequest/serviceRequest.route";
-import { UserRoutes } from "./app/module/users/users.route";
-import { AdminRoutes } from "./app/module/admin/admin.route";
 import { CommentRoutes } from "./app/module/comment/comments.route";
-import { StaffRoutes } from "./app/module/staff/staff.route";
 import { PaymentController } from "./app/module/payment/payment.controller";
 import { PaymentRoutes } from "./app/module/payment/payment.route";
+import { ServiceRequestRoutes } from "./app/module/serviceRequest/serviceRequest.route";
+import { StaffRoutes } from "./app/module/staff/staff.route";
+import { UserRoutes } from "./app/module/users/users.route";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 
 const app: Application = express();
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: {
+    success: false,
+    message: "Too many requests, please try again later.",
+  },
+});
 
+app.use(helmet());
+app.use(limiter);
 app.use(
   cors({
     origin: config.frontend_url,
@@ -32,8 +44,9 @@ app.use(
 app.post(
   "/api/v1/payments/webhook",
   express.raw({ type: "application/json" }),
-  PaymentController.handleWebhook 
+  PaymentController.handleWebhook,
 );
+
 // Enable URL-encoded form data parsing
 app.use(express.urlencoded({ extended: true }));
 
