@@ -7,6 +7,7 @@ import Stripe from "stripe";
 import { transporter } from "../../lib/notemailter";
 import path from "path/win32";
 import ejs from "ejs";
+import { IPaymentQuery } from "./payment.interface";
 
 const createCheckoutSession = async (
   userId: string,
@@ -210,7 +211,7 @@ const getMyPayments = async (userId: string) => {
 export const getPaymentById = async (
   paymentId: string,
   userId: string,
-  role: string
+  role: string,
 ) => {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
@@ -237,16 +238,74 @@ export const getPaymentById = async (
   if (role === "STAFF" && payment.serviceRequest.assignedStaffId !== userId) {
     throw new AppError(
       403,
-      "You can only view payment details for service requests assigned to you."
+      "You can only view payment details for service requests assigned to you.",
     );
   }
 
   return payment;
 };
 
+const getAllPayments = async (query: IPaymentQuery) => {
+  const { page = 1, limit = 10, status, search } = query;
+
+  const pageNumber = Number(page);
+  const limitNumber = Number(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  const whereConditions: any = {};
+
+  if (status) {
+    whereConditions.status = status;
+  }
+
+  if (search) {
+    whereConditions.OR = [
+      { transactionId: { contains: search, mode: "insensitive" } },
+      { user: { name: { contains: search, mode: "insensitive" } } },
+      { user: { email: { contains: search, mode: "insensitive" } } },
+    ];
+  }
+
+  const [payments, total] = await Promise.all([
+    prisma.payment.findMany({
+      where: whereConditions,
+      skip,
+      take: limitNumber,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        serviceRequest: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.payment.count({ where: whereConditions }),
+  ]);
+
+  return {
+    meta: {
+      page: pageNumber,
+      limit: limitNumber,
+      total,
+      totalPages: Math.ceil(total / limitNumber),
+    },
+    data: payments,
+  };
+};
+
 export const PaymentService = {
   createCheckoutSession,
   handleStripeWebhook,
   getMyPayments,
-  getPaymentById
+  getPaymentById,
+  getAllPayments,
 };
