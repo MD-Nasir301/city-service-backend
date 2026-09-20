@@ -12,5 +12,6 @@ yarn.lock
 package-lock.json
 pnpm-workspace.yaml
 .vscode
- 
+
 project_details.md
+
