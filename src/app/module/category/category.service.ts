@@ -1,8 +1,6 @@
-import {
-	AuditAction,
-	EntityName,
-	type Prisma,
-} from "../../../generated/prisma/client";
+
+import { AuditAction, EntityName } from "../../../generated/prisma";
+import { Prisma } from "../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
 import { createAuditLog } from "../../utils/createAuditLog";
@@ -29,8 +27,8 @@ const createCategory = async (
 		if (adminId) {
 			await tx.auditLog.create({
 				data: {
-					action: "CREATE_CATEGORY",
-					entityName: "Category",
+					action: AuditAction.CREATE,
+					entityName: EntityName.CATEGORY,
 					entityId: newCategory.id,
 					performedById: adminId,
 					details: { name: newCategory.name, type: newCategory.type },

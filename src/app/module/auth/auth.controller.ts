@@ -3,6 +3,7 @@ import httpStatus from "http-status";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { AuthService } from "./auth.service";
+import AppError from "../../utils/appError";
 
 const registerCitizen = catchAsync(async (req: Request, res: Response) => {
 	const payload = req.body;
@@ -80,7 +81,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 
 const refreshToken = catchAsync(async (req: Request, res: Response) => {
 	if (!req.cookies.refreshToken) {
-		throw new Error("Refresh token is missing");
+		throw new AppError(400, "Refresh token is missing");
 	}
 	const result = await AuthService.refreshToken(req.cookies.refreshToken);
 	const { accessToken, refreshToken: newRefreshToken } = result;
