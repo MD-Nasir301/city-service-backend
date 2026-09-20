@@ -22,7 +22,7 @@ const createServiceRequest = catchAsync(
 					"city_complaints_requests",
 				);
 				imageUrls.push(uploadResult.secure_url);
-				imagePublicIds.push(uploadResult.public_id); // public_id স্টোর করছি
+				imagePublicIds.push(uploadResult.public_id); 
 			}
 		}
 

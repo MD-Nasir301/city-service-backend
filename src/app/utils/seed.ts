@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { CategoryType, Role } from "../../generated/prisma/enums"; // আপনার Prisma Enum Import এর সঠিক পাথ
+import { CategoryType, Role } from "../../generated/prisma/enums"; 
 import config from "../config";
 import { prisma } from "../lib/prisma";
 
