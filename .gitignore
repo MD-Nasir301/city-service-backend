@@ -14,5 +14,5 @@ pnpm-workspace.yaml
 .vscode
 
 project_details.md
-
+readme-frontend.md
 .vercel
