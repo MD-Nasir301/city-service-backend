@@ -93,7 +93,7 @@ const createServiceRequest = async (
 // Get All Service Requests (Filter, Search & Pagination)
 const getAllServiceRequests = async (
   query: IServiceRequestFilterParams,
-  user: { userId: string; role: Role },
+  user?: { userId: string; role: Role },
 ) => {
   const {
     search,
@@ -115,13 +115,23 @@ const getAllServiceRequests = async (
     { isDeleted: false },
   ];
 
-  if (user.role === Role.CITIZEN) {
+  if (!user) {
     andConditions.push({
-      OR: [{ category: { type: "FREE" } }, { citizenId: user.userId }],
+      category: { type: CategoryType.FREE },
+    });
+  } else if (user.role === Role.CITIZEN) {
+    andConditions.push({
+      OR: [
+        { category: { type: CategoryType.FREE } },
+        { citizenId: user.userId },
+      ],
     });
   } else if (user.role === Role.STAFF) {
     andConditions.push({
-      OR: [{ category: { type: "FREE" } }, { assignedStaffId: user.userId }],
+      OR: [
+        { category: { type: CategoryType.FREE } },
+        { assignedStaffId: user.userId },
+      ],
     });
   }
 

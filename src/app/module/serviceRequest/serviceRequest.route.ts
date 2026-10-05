@@ -5,6 +5,7 @@ import { auth } from "../../middleware/checkAuth";
 import { validateRequest } from "../../middleware/validateRequest";
 import { ServiceRequestController } from "./serviceRequest.controller";
 import { ServiceRequestValidation } from "./serviceRequest.validation";
+import { optionalAuth } from "../../middleware/optionalCheckAuth";
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.post(
 
 router.get(
 	"/",
-	auth(Role.CITIZEN, Role.STAFF, Role.ADMIN, Role.SUPER_ADMIN),
+	optionalAuth(),
 	ServiceRequestController.getAllServiceRequests,
 );
 
