@@ -211,7 +211,7 @@ const getMyServiceRequests = async (
 
   const andConditions: Prisma.ServiceRequestWhereInput[] = [
     { citizenId: userId },
-    // { isDeleted: false },
+    { isDeleted: false },
   ];
 
   if (search) {
@@ -573,7 +573,6 @@ const deleteServiceRequest = async (
     }
   }
 
-  // Transaction (Soft Delete + AuditLog)
   const result = await prisma.$transaction(async (tx) => {
     const deletedRequest = await tx.serviceRequest.update({
       where: { id },
