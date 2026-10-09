@@ -55,7 +55,7 @@ const createServiceRequest = async (
         longitude: payload.longitude,
         images: payload.images || [],
         priority: payload.priority,
-        quantity: quantity,
+        quantity: Number(payload.quantity) || 1,
         totalAmount: calculatedAmount,
         isPaid: category.type === CategoryType.FREE,
         status: RequestStatus.PENDING,
