@@ -6,7 +6,7 @@ import {
 	EntityName,
 	RequestStatus,
 	Role,
-	type UserStatus,
+	UserStatus,
 } from "../../../generated/prisma/enums";
 import config from "../../config";
 import { transporter } from "../../lib/notemailter";
@@ -485,6 +485,60 @@ const createStaff = async (payload: ICreateStaffInput, adminId: string) => {
 	return result;
 };
 
+export const softDeleteUser = async (userId: string, adminId: string) => {
+  const user = await prisma.user.findFirst({
+    where: { id: userId, isDeleted: false },
+  });
+
+  if (!user) {
+    throw new AppError(404, "User not found or already deleted.");
+  }
+
+
+  // Database Transaction (Soft Delete + Audit Log)
+  const result = await prisma.$transaction(async (tx) => {
+    // 1. Mark User as Soft Deleted
+    const updatedUser = await tx.user.update({
+      where: { id: userId },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+        status: UserStatus.BLOCKED, 
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        isDeleted: true,
+        deletedAt: true,
+      },
+    });
+
+    // 2. Create Audit Log
+    if (adminId) {
+      await createAuditLog(tx, {
+        action: AuditAction.DELETE,
+        entityName: EntityName.USER,
+        entityId: updatedUser.id,
+        performedById: adminId,
+        details: {
+          actionType: "SOFT_DELETE_USER",
+          targetUserEmail: updatedUser.email,
+          targetUserName: updatedUser.name,
+          targetUserRole: updatedUser.role,
+        },
+      });
+    }
+
+    return updatedUser;
+  });
+
+  return result;
+};
+
+
 export const AdminService = {
 	getAllUsers,
 	updateUserStatus,
@@ -492,4 +546,5 @@ export const AdminService = {
 	getAdminDashboardStats,
 	getAllAuditLogs,
 	createStaff,
+	softDeleteUser,
 };

@@ -97,6 +97,20 @@ const createStaff = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const softDeleteUser = catchAsync(async (req: Request, res: Response) => {
+	const { id } = req.params;
+	const adminId = req.user?.userId;
+
+	const result = await AdminService.softDeleteUser(id as string, adminId as string);
+
+	sendResponse(res, {
+		statusCode: 200,
+		success: true,
+		message: "User soft deleted successfully",
+		data: result,
+	});
+});
+
 export const AdminController = {
 	getAllUsers,
 	updateUserStatus,
@@ -104,4 +118,5 @@ export const AdminController = {
 	getAdminDashboardStats,
 	getAllAuditLogs,
 	createStaff,
+	softDeleteUser,
 };

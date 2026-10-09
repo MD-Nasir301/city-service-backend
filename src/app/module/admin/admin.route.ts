@@ -8,42 +8,48 @@ import { AdminValidation } from "./admin.validation";
 const router = Router();
 
 router.get(
-	"/users",
-	auth(Role.ADMIN, Role.SUPER_ADMIN),
-	AdminController.getAllUsers,
+  "/users",
+  auth(Role.ADMIN, Role.SUPER_ADMIN),
+  AdminController.getAllUsers,
 );
 
 router.patch(
-	"/users/:id/status",
-	auth(Role.ADMIN, Role.SUPER_ADMIN),
-	validateRequest(AdminValidation.UpdateUserStatusZodSchema),
-	AdminController.updateUserStatus,
+  "/users/:id/status",
+  auth(Role.ADMIN, Role.SUPER_ADMIN),
+  validateRequest(AdminValidation.UpdateUserStatusZodSchema),
+  AdminController.updateUserStatus,
 );
 
 router.patch(
-	"/users/:id/role",
-	auth(Role.ADMIN, Role.SUPER_ADMIN),
-	validateRequest(AdminValidation.updateUserRoleZodSchema),
-	AdminController.updateUserRole,
+  "/users/:id/role",
+  auth(Role.ADMIN, Role.SUPER_ADMIN),
+  validateRequest(AdminValidation.updateUserRoleZodSchema),
+  AdminController.updateUserRole,
 );
 
 router.get(
-	"/dashboard-stats",
-	auth(Role.ADMIN, Role.SUPER_ADMIN),
-	AdminController.getAdminDashboardStats,
+  "/dashboard-stats",
+  auth(Role.ADMIN, Role.SUPER_ADMIN),
+  AdminController.getAdminDashboardStats,
 );
 
 router.get(
-	"/audit-logs",
-	auth(Role.ADMIN, Role.SUPER_ADMIN),
-	AdminController.getAllAuditLogs,
+  "/audit-logs",
+  auth(Role.ADMIN, Role.SUPER_ADMIN),
+  AdminController.getAllAuditLogs,
 );
 
 router.post(
-	"/create-staff",
-	auth(Role.ADMIN, Role.SUPER_ADMIN),
-	validateRequest(AdminValidation.createStaffZodSchema),
-	AdminController.createStaff,
+  "/create-staff",
+  auth(Role.ADMIN, Role.SUPER_ADMIN),
+  validateRequest(AdminValidation.createStaffZodSchema),
+  AdminController.createStaff,
+);
+
+router.patch(
+  "/delete-user/:id",
+  auth(Role.ADMIN, Role.SUPER_ADMIN),
+  AdminController.softDeleteUser,
 );
 
 export const AdminRoutes = router;
