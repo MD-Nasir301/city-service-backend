@@ -377,13 +377,14 @@ const getSingleServiceRequest = async (
   if (!result) {
     throw new AppError(404, "Service request not found");
   }
+  if (result.category.type === "PAID") {
+    if (user.role === Role.CITIZEN && result.citizenId !== user.userId) {
+      throw new AppError(403, "You are not authorized to view this request");
+    }
 
-  if (user.role === Role.CITIZEN && result.citizenId !== user.userId) {
-    throw new AppError(403, "You are not authorized to view this request");
-  }
-
-  if (user.role === Role.STAFF && result.assignedStaffId !== user.userId) {
-    throw new AppError(403, "You are not assigned to this request");
+    if (user.role === Role.STAFF && result.assignedStaffId !== user.userId) {
+      throw new AppError(403, "You are not assigned to this request");
+    }
   }
 
   return result;
@@ -671,4 +672,3 @@ export const ServiceRequestService = {
   deleteServiceRequest,
   updateServiceRequest,
 };
-
