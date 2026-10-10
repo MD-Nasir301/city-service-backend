@@ -3,6 +3,7 @@ import config from "./app/config";
 import { transporter } from "./app/lib/notemailter";
 import { prisma } from "./app/lib/prisma";
 import { redisCLient } from "./app/lib/redis";
+import cors from "cors";
 import {
 	seedCategories,
 	seedSuperAdmin,
@@ -11,6 +12,14 @@ import {
 } from "./app/utils/seed";
 
 const PORT = config.port;
+
+app.use(
+  cors({
+	origin: config.frontend_url,
+	credentials: true,
+  }),
+);
+
 
 const main = async () => {
 	try {
